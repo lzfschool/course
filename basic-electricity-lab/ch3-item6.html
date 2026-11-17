@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>戴維寧等效電路實習</title>
+<title>諾頓等效電路實習</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;600&display=swap">
@@ -117,25 +117,25 @@ svg.eq{width:100%;max-width:460px;height:auto;display:block}
 
 <div class="wrap">
   <header>
-    <a href="index.html" style="display:inline-block;font-size:13px;color:var(--accent);text-decoration:none;margin-bottom:4px">← 回實習目錄</a>
+    <a href="../index.html?course=basic-electricity-lab&amp;ch=3" style="display:inline-block;font-size:13px;color:var(--accent);text-decoration:none;margin-bottom:4px">← 回實習目錄</a>
     <div class="eyebrow">基本電學實習 第 3 章 · 3-4 戴維寧及諾頓定理</div>
-    <h1>工作項目 5：量測等效電阻與電壓並繪戴維寧等效電路圖</h1>
-    <p class="sub">以 330Ω 為負載，從 a、b 兩端看進去，整個雙電源電路可以化成一個電壓源 E<sub>Th</sub> 串聯一個電阻 R<sub>Th</sub>。先把電源換成短路線、取出 330Ω 量 R<sub>Th</sub>，再接回電源量開路電壓 E<sub>Th</sub>，最後接回 330Ω 驗證等效電路。</p>
+    <h1>工作項目 6：量測等效電阻與短路電流並繪諾頓等效電路圖</h1>
+    <p class="sub">以 330Ω 為負載，從 a、b 兩端看進去，整個雙電源電路可以化成一個電流源 I<sub>N</sub> 並聯一個電阻 R<sub>N</sub>。先把電源換成短路線、取出 330Ω 量 R<sub>N</sub>，再接回電源、把電流表直接跨接 a、b 量短路電流 I<sub>N</sub>，最後接回 330Ω 驗證等效電路。</p>
   </header>
 
   <div class="grid">
     <section class="panel" aria-label="實習電路">
       <div class="row" style="justify-content:space-between">
-        <h2>圖 3-19　實習電路圖</h2>
+        <h2>圖 3-20　實習電路圖</h2>
         <div class="row" role="tablist" aria-label="檢視方式">
           <button class="btn on" id="tabSch" type="button" role="tab" aria-selected="true">電路圖</button>
           <button class="btn" id="tabBB" type="button" role="tab" aria-selected="false">麵包板接線圖</button>
         </div>
       </div>
-      <div class="svgbox" id="schBox"><svg class="circuit" id="circ" viewBox="0 0 640 320" role="img" aria-label="戴維寧定理實習電路"></svg></div>
+      <div class="svgbox" id="schBox"><svg class="circuit" id="circ" viewBox="0 0 640 320" role="img" aria-label="諾頓定理實習電路"></svg></div>
       <div class="svgbox" id="bbBox" hidden>
         <svg class="circuit" id="bb" viewBox="0 0 650 360" role="img" aria-label="麵包板接線圖"></svg>
-        <p class="hint" style="margin:6px 0 0">9V 電池插在第 2、4 行，3V（兩顆 1.5V 串聯）插在第 24、26 行，負端以黑色跳線接到下方藍色軌（共同點）。第 10 行是 a 點、第 18 行是 b 點；紫色跳線連到 330Ω，量電流時點 ✕ 取下跳線、串入電表。</p>
+        <p class="hint" style="margin:6px 0 0">9V 電池插在第 2、4 行，3V（兩顆 1.5V 串聯）插在第 24、26 行，負端以黑色跳線接到下方藍色軌（共同點）。第 10 行是 a 點、第 18 行是 b 點；紫色跳線連到 330Ω，量短路電流時，電流檔的紅棒點 a、黑棒點 b；驗證 I<sub>L</sub> 時點 ✕ 取下跳線、串入電表。</p>
       </div>
       <div class="legend" id="ccLegend"></div>
       <div>
@@ -191,9 +191,9 @@ svg.eq{width:100%;max-width:460px;height:auto;display:block}
     </div>
     <div class="hint">依目前電阻與電壓計算的結果：</div>
     <div class="sumbar">
-      <div class="cell"><b>R<sub>Th</sub>（電源短路、取出 330Ω）</b><span id="sR">—</span></div>
-      <div class="cell"><b>E<sub>Th</sub>（ab 開路電壓）</b><span id="sE">—</span></div>
-      <div class="cell"><b>等效電路預測 I<sub>L</sub></b><span id="sP">—</span></div>
+      <div class="cell"><b>R<sub>N</sub>（電源短路、取出 330Ω）</b><span id="sR">—</span></div>
+      <div class="cell"><b>I<sub>N</sub>（ab 短路電流）</b><span id="sE">—</span></div>
+      <div class="cell"><b>諾頓電路預測 I<sub>L</sub></b><span id="sP">—</span></div>
       <div class="cell hl"><b>原電路實際 I<sub>L</sub></b><span id="sI">—</span></div>
     </div>
     <div class="row"><label class="hint"><input type="checkbox" id="showSum"> 顯示上方計算結果（教師）</label></div>
@@ -207,10 +207,10 @@ svg.eq{width:100%;max-width:460px;height:auto;display:block}
     </div>
   </section>
 
-  <section class="panel" aria-label="戴維寧等效電路">
-    <h2>步驟 5　戴維寧等效電路圖</h2>
+  <section class="panel" aria-label="諾頓等效電路">
+    <h2>步驟 5　諾頓等效電路圖</h2>
     <div class="eqwrap">
-      <svg class="eq" id="eq" viewBox="0 0 460 210" role="img" aria-label="依量測值繪出的戴維寧等效電路"></svg>
+      <svg class="eq" id="eq" viewBox="0 0 460 210" role="img" aria-label="依量測值繪出的諾頓等效電路"></svg>
       <div class="eqnote" id="eqNote"></div>
     </div>
   </section>
@@ -224,7 +224,7 @@ svg.eq{width:100%;max-width:460px;height:auto;display:block}
         <button class="btn" id="resetBtn" type="button">清空紀錄</button>
       </div>
     </div>
-    <p class="hint" style="margin:0">量測值以左 9V、右 3V 為準，與模擬值比對（容許 ±3%）；計算值依標稱值（容許 ±2%）。數位電表沒有 Ω×100、DC10V 檔，請改用 2kΩ（或 200Ω）、20V（或 2V）檔。</p>
+    <p class="hint" style="margin:0">量測值以左 9V、右 3V 為準，與模擬值比對（容許 ±3%）；計算值依標稱值（容許 ±2%）。數位電表沒有 Ω×100、DC250mA 檔，請改用 2kΩ（或 200Ω）、20mA（或 200mA）檔。電流一律以 mA 填寫。</p>
     <div class="svgbox"><table id="sheet"></table></div>
   </section>
 
@@ -255,6 +255,8 @@ function solve(R,E1,E2,load){
 const cur=()=>solve(actual,st.e1?st.V1:0,st.e2?st.V2:0,st.load);
 const rTh=R=>R.R1*R.R2/(R.R1+R.R2)+R.R3*R.R4/(R.R3+R.R4);
 const eTh=(R,E1,E2)=>E1*R.R2/(R.R1+R.R2)-E2*R.R3/(R.R3+R.R4);
+// ab 短路時由 a 流向 b 的電流（a、b 合併成一點 s）
+function iSC(R,E1,E2){const Vs=(E1/R.R1+E2/R.R4)/(1/R.R1+1/R.R2+1/R.R3+1/R.R4);return (E1-Vs)/R.R1-Vs/R.R2}
 // 兩電源都換成短路線時，任兩點電阻
 function rBetween(n1,n2){
   const al=n=>n==="p"||n==="q"?"g":n,x=al(n1),y=al(n2);if(x===y)return 0;
@@ -333,7 +335,7 @@ function drawSch(){
         el("circle",{cx:256,cy:T,r:9,class:"tgt"},b);
         el("path",{d:`M252,${T-4} L260,${T+4} M260,${T-4} L252,${T+4}`,class:"x"},b);
         el("title",{},b).textContent="取下 a 至 330Ω 的連接線，串入電表";
-        keyAct(b,()=>{st.brk="L";update()});
+        keyAct(b,()=>{st.brk="L";st.red=st.black=null;update()});
       }
     }
     colorRes(S,266,T,420,T,nominal.RL,"RL");
@@ -363,6 +365,12 @@ function drawSch(){
     keyAct(hit,()=>clickNode(id));
   });
   el("text",{x:330,y:B+20,class:"small","text-anchor":"middle"},S).textContent="共同點";
+  if(isA&&st.red&&st.black){
+    const P={a:[240,T],b:[420,T],p:[90,T],q:[560,T],g:[330,B]},mx=330,my=st.load?T+80:T+50,rp=P[st.red],bp=P[st.black];
+    el("path",{d:`M${rp[0]},${rp[1]} Q${(rp[0]+mx)/2},${my} ${mx-13},${my}`,fill:"none",stroke:"var(--red)","stroke-width":2,"stroke-dasharray":"6 3"},S);
+    el("path",{d:`M${bp[0]},${bp[1]} Q${(bp[0]+mx)/2},${my} ${mx+13},${my}`,fill:"none",stroke:"var(--black)","stroke-width":2,"stroke-dasharray":"6 3"},S);
+    const a=el("g",{class:"ammeter"},S);el("circle",{cx:mx,cy:my,r:13},a);el("text",{x:mx,y:my+5,"text-anchor":"middle"},a).textContent="A";
+  }
 }
 
 /* ---------- 麵包板 ---------- */
@@ -426,7 +434,7 @@ function drawBB(){
         const py=y-lift/2;
         el("circle",{cx:mx,cy:py,r:8,fill:"#fff",stroke:"#1f7a5a","stroke-width":1.6,"stroke-dasharray":"3 2"},g);
         el("path",{d:`M${mx-3.5},${py-3.5} L${mx+3.5},${py+3.5} M${mx+3.5},${py-3.5} L${mx-3.5},${py+3.5}`,stroke:"#1f7a5a","stroke-width":2},g);
-        keyAct(g,()=>{st.brk="L";update()});
+        keyAct(g,()=>{st.brk="L";st.red=st.black=null;update()});
       }
     }
   }else{
@@ -448,7 +456,7 @@ function drawBB(){
 }
 function clickNode(id){
   const t=R().type;
-  if(t==="A"){st._err="電流檔不可並聯在兩點之間，會形成短路！要量 330Ω 的電流，請點連接線上的 ✕，取下該線並把電表串聯進去。";update();return}
+  if(t==="A"){st.brk=null;if(!st.red||(st.red&&st.black)){st.red=id;st.black=null}else if(id!==st.red){st.black=id}update();return}
   if(t==="off"){st._err="電表在 OFF 檔，請先轉到量測檔位。";update();return}
   if(!st.red||(st.red&&st.black)){st.red=id;st.black=null}else if(id!==st.red){st.black=id}
   update();
@@ -478,13 +486,25 @@ function reading(sol){
   const r=R(),out={sign:"",digits:"",unit:r.unit||"",ol:false,msg:"",lvl:"",log:null};
   if(r.type==="off"){out.msg="電表在 OFF 檔。";return out}
   if(r.type==="A"){
-    if(!st.load){out.digits=(0).toFixed(r.dec);out.msg="330Ω 已取出，ab 之間開路，沒有負載電流。要驗證等效電路請先接回 330Ω。";out.lvl="warn";return out}
-    if(st.brk!=="L"){out.digits=(0).toFixed(r.dec);out.msg="電流檔須串聯：點 a 與 330Ω 之間連接線上的 ✕，取下該線並串入電表（紅棒接 a 點）。";return out}
+    if(st.red&&st.black){
+      const ab=(st.red==="a"&&st.black==="b")||(st.red==="b"&&st.black==="a");
+      if(!ab){out.digits="Err";out.msg=`電流檔內阻幾乎是 0，跨接在 ${NN[st.red]}–${NN[st.black]} 之間會把電路短路（可能燒斷保險絲）！只有量 ab 短路電流時才把電流表直接跨接 a、b。`;out.lvl="bad";return out}
+      const I=(st.red==="a"?1:-1)*iSC(actual,st.e1?st.V1:0,st.e2?st.V2:0)*1000;Object.assign(out,show(r,I));
+      if(out.ol){out.msg=`超過 ${r.label} 檔！請立刻改用較大的電流檔。`;out.lvl="bad";return out}
+      out.log=`Iab(紅${NN[st.red]}→黑${NN[st.black]}) = ${out.sign}${out.digits} mA　[${srcTxt()}，DCA ${r.label}]`;
+      if(st.load){out.msg=`讀值 ${out.sign}${out.digits} mA。330Ω 被電流表短路，電流全部流經電表，所以讀到的就是短路電流；正式量測時仍應先取出 330Ω。`;out.lvl="warn"}
+      else if(I<-1e-6){out.msg=`讀值為負：短路電流實際由 b 流向 a。`;out.lvl="warn"}
+      else if(r.id!=="A2"&&Math.abs(I)<r.full/10){out.msg="讀值偏小，可改用較小的電流檔提高解析度。";out.lvl="warn"}
+      else{out.msg=`ab 短路電流 = ${out.digits} mA（${srcTxt()}）`;out.lvl="ok"}
+      return out;
+    }
+    if(st.red){out.digits=(0).toFixed(r.dec);out.msg="再點黑棒位置。量短路電流：紅棒 a、黑棒 b。";return out}
+    if(st.brk!=="L"){out.digits=(0).toFixed(r.dec);out.msg="量短路電流：取出 330Ω 後，紅棒點 a、黑棒點 b（電流表直接跨接 ab）。驗證 IL：接回 330Ω，點連接線上的 ✕ 串入電表。";return out}
+    if(!st.load){out.digits=(0).toFixed(r.dec);out.msg="330Ω 已取出，沒有負載電流。";out.lvl="warn";return out}
     const I=sol.IL*1000;Object.assign(out,show(r,I));
     if(out.ol){out.msg=`超過 ${r.label} 檔！請立刻改用較大的電流檔。`;out.lvl="bad";return out}
     out.log=`IL = ${out.sign}${out.digits} mA　[${srcTxt()}，DCA ${r.label}]`;
     if(I<-1e-6)out.msg="讀值為負：電流實際上由 b 流向 a。",out.lvl="warn";
-    else if(r.id!=="A2"&&Math.abs(I)<r.full/10)out.msg="讀值偏小，可改用較小的電流檔提高解析度。",out.lvl="warn";
     else out.msg=`330Ω 電流 IL = ${out.digits} mA（${srcTxt()}）`,out.lvl="ok";
     return out;
   }
@@ -512,30 +532,35 @@ function numIn(k){const e=$("#ws-"+k);if(!e||e.value==="")return null;const v=pa
 function drawEq(){
   const S=$("#eq");S.innerHTML="";
   const w=d=>el("path",{d,class:"wire"},S);
-  const Rm=numIn("m1"),Em=numIn("m2"),RL=nominal.RL;
-  const T=40,Bt=170;
-  battV(S,70,T,Bt,true,Em==null?"？":Em,false);
-  el("text",{x:30,y:84,class:"rname","text-anchor":"middle"},S).textContent="ETh";
-  w(`M70,${T} L120,${T}`);
-  el("rect",{x:120,y:T-10,width:70,height:20,rx:3,fill:"var(--panel)",stroke:"var(--wire)","stroke-width":2.2},S);
-  w(`M190,${T} L250,${T}`);w(`M70,${Bt} L250,${Bt}`);
-  el("text",{x:155,y:T-18,class:"rname","text-anchor":"middle"},S).textContent="RTh = "+(Rm==null?"？":Rm+" Ω");
+  const Rm=numIn("m1"),Im=numIn("m2"),RL=nominal.RL;
+  const T=40,Bt=170,my=(T+Bt)/2;
+  // 電流源（箭頭向上，流向 a）
+  w(`M70,${T} L70,${my-24} M70,${my+24} L70,${Bt}`);
+  el("circle",{cx:70,cy:my,r:24,fill:"var(--panel)",stroke:"var(--wire)","stroke-width":2.4},S);
+  el("path",{d:`M70,${my+14} L70,${my-12} M63,${my-4} L70,${my-14} L77,${my-4}`,fill:"none",stroke:"var(--cur)","stroke-width":2.4},S);
+  el("text",{x:40,y:my-4,class:"rname","text-anchor":"end"},S).textContent="IN";
+  el("text",{x:40,y:my+14,class:"lbl","text-anchor":"end"},S).textContent=Im==null?"？":Im+" mA";
+  // RN 並聯
+  w(`M70,${T} L250,${T} M70,${Bt} L250,${Bt} M160,${T} L160,${my-32} M160,${my+32} L160,${Bt}`);
+  el("rect",{x:150,y:my-32,width:20,height:64,rx:3,fill:"var(--panel)",stroke:"var(--wire)","stroke-width":2.2},S);
+  el("text",{x:178,y:my-4,class:"rname"},S).textContent="RN";
+  el("text",{x:178,y:my+14,class:"lbl"},S).textContent=Rm==null?"？":Rm+" Ω";
+  [[70,T],[160,T],[70,Bt],[160,Bt]].forEach(([x,y])=>el("circle",{cx:x,cy:y,r:3.5,class:"node"},S));
   [[250,T,"a"],[250,Bt,"b"]].forEach(([x,y,t])=>{el("circle",{cx:x,cy:y,r:5,fill:"var(--panel)",stroke:"var(--wire)","stroke-width":2},S);
     el("text",{x:x,y:y+(t==="a"?-12:26),class:"nodelbl","text-anchor":"middle"},S).textContent=t});
-  // 虛線接上 330Ω
-  el("path",{d:`M255,${T} L330,${T} L330,${(T+Bt)/2-30} M330,${(T+Bt)/2+30} L330,${Bt} L255,${Bt}`,fill:"none",stroke:"var(--muted)","stroke-width":1.6,"stroke-dasharray":"5 4"},S);
-  el("rect",{x:322,y:(T+Bt)/2-30,width:16,height:60,rx:3,fill:"none",stroke:"var(--muted)","stroke-width":1.8,"stroke-dasharray":"5 4"},S);
-  el("text",{x:346,y:(T+Bt)/2+5,class:"lbl"},S).textContent="RL "+ohmTxt(RL);
+  el("path",{d:`M255,${T} L330,${T} L330,${my-30} M330,${my+30} L330,${Bt} L255,${Bt}`,fill:"none",stroke:"var(--muted)","stroke-width":1.6,"stroke-dasharray":"5 4"},S);
+  el("rect",{x:322,y:my-30,width:16,height:60,rx:3,fill:"none",stroke:"var(--muted)","stroke-width":1.8,"stroke-dasharray":"5 4"},S);
+  el("text",{x:346,y:my+5,class:"lbl"},S).textContent="RL "+ohmTxt(RL);
   el("path",{d:`M285,${T-14} l26,0 m-6,-4 l6,4 l-6,4`,stroke:"var(--cur)","stroke-width":1.5,fill:"none"},S);
   el("text",{x:298,y:T-20,class:"cur","text-anchor":"middle"},S).textContent="IL";
   const n=$("#eqNote");
-  if(Rm==null||Em==null){n.innerHTML=`<div>在下方學習單填入步驟 3 的 <b>R<sub>Th</sub></b> 與步驟 4 的 <b>E<sub>Th</sub></b>，左圖會依你的量測值畫出戴維寧等效電路。</div><div class="hint">等效電路：E<sub>Th</sub> 串聯 R<sub>Th</sub>，a、b 為輸出端；E<sub>Th</sub> 的正端接 a（a 點電位較高）。</div>`;return}
-  const IL=Em/(Rm+RL)*1000,VL=Em*RL/(Rm+RL);
-  n.innerHTML=`<div>依你的量測值：E<sub>Th</sub> = <span class="big">${Em} V</span>，R<sub>Th</sub> = <span class="big">${Rm} Ω</span></div>
-  <div>接上 ${ohmTxt(RL)} 時，等效電路預測：</div>
-  <div class="big">I<sub>L</sub> = E<sub>Th</sub> ÷ (R<sub>Th</sub> + ${RL}) = ${IL.toFixed(2)} mA</div>
+  if(Rm==null||Im==null){n.innerHTML=`<div>在下方學習單填入步驟 3 的 <b>R<sub>N</sub></b> 與步驟 4 的 <b>I<sub>N</sub></b>，左圖會依你的量測值畫出諾頓等效電路。</div><div class="hint">諾頓等效電路：電流源 I<sub>N</sub> 並聯 R<sub>N</sub>，箭頭指向 a（短路電流由 a 經外部流向 b）。R<sub>N</sub> 與戴維寧的 R<sub>Th</sub> 相同。</div>`;return}
+  const IL=Im*Rm/(Rm+RL),VL=IL/1000*RL;
+  n.innerHTML=`<div>依你的量測值：I<sub>N</sub> = <span class="big">${Im} mA</span>，R<sub>N</sub> = <span class="big">${Rm} Ω</span></div>
+  <div>接上 ${ohmTxt(RL)} 時，依分流定則預測：</div>
+  <div class="big">I<sub>L</sub> = I<sub>N</sub> × R<sub>N</sub> ÷ (R<sub>N</sub> + ${RL}) = ${IL.toFixed(2)} mA</div>
   <div class="big">V<sub>L</sub> = ${VL.toFixed(3)} V</div>
-  <div class="hint">接回 330Ω，用電流檔量原電路的 I<sub>L</sub>，看是否相同（學習單「驗證」）。</div>`;
+  <div class="hint">換成戴維寧等效：E<sub>Th</sub> = I<sub>N</sub> × R<sub>N</sub> = ${(Im*Rm/1000).toFixed(3)} V。接回 330Ω 量原電路的 I<sub>L</sub> 驗證。</div>`;
 }
 
 /* ---------- 更新 ---------- */
@@ -550,8 +575,8 @@ function update(){
   $("#dSign").textContent=o.sign;$("#dVal").textContent=r.type==="off"?"":o.digits;$("#dUnit").textContent=r.type==="off"?"":o.unit;
   const m=$("#msg");m.textContent=o.msg;m.className="msg "+(o.lvl||"");
   [["e1Bat",st.e1],["e1Sh",!st.e1],["e2Bat",st.e2],["e2Sh",!st.e2],["ldOn",st.load],["ldOff",!st.load]].forEach(([id,on])=>{$("#"+id).classList.toggle("on",on);$("#"+id).setAttribute("aria-pressed",on)});
-  const Rt=rTh(actual),Et=eTh(actual,st.V1,st.V2),Ip=Et/(Rt+actual.RL),Ia=solve(actual,st.V1,st.V2,true).IL,sh=st.showSum;
-  $("#sR").textContent=sh?Rt.toFixed(1)+" Ω":"？";$("#sE").textContent=sh?Et.toFixed(3)+" V":"？";
+  const Rt=rTh(actual),In=iSC(actual,st.V1,st.V2),Ip=In*Rt/(Rt+actual.RL),Ia=solve(actual,st.V1,st.V2,true).IL,sh=st.showSum;
+  $("#sR").textContent=sh?Rt.toFixed(1)+" Ω":"？";$("#sE").textContent=sh?(In*1000).toFixed(2)+" mA":"？";
   $("#sP").textContent=sh?(Ip*1000).toFixed(2)+" mA":"？";$("#sI").textContent=sh?(Ia*1000).toFixed(2)+" mA":"？";
   drawEq();
   st._last=o;
@@ -560,9 +585,10 @@ function update(){
 /* ---------- 快速設定 ---------- */
 const QUICK=[
   ["步驟 3：電源換短路線、取出 330Ω、量 Rab",{e1:false,e2:false,load:false,range:"R2k",brk:null,red:"a",black:"b"}],
-  ["步驟 4：接上兩電源、量開路電壓 Vab",{e1:true,e2:true,load:false,range:"V20",brk:null,red:"a",black:"b"}],
+  ["步驟 4：接上兩電源、電流表跨接 ab 量 IN",{e1:true,e2:true,load:false,range:"A20",brk:null,red:"a",black:"b"}],
+  ["6(2)(a)：3V 短路，量 IN1",{e1:true,e2:false,load:false,range:"A200",brk:null,red:"a",black:"b"}],
+  ["6(2)(b)：9V 短路，量 IN2",{e1:false,e2:true,load:false,range:"A20",brk:null,red:"a",black:"b"}],
   ["驗證：接回 330Ω、量 IL",{e1:true,e2:true,load:true,range:"A20",brk:"L",red:null,black:null}],
-  ["驗證：量 330Ω 端電壓",{e1:true,e2:true,load:true,range:"V2",brk:null,red:"a",black:"b"}],
 ];
 QUICK.forEach(([lab,cfg])=>{const b=document.createElement("button");b.type="button";b.className="btn";b.textContent=lab;
   b.addEventListener("click",()=>{Object.assign(st,cfg);buildDial();update()});$("#quick").appendChild(b)});
@@ -589,22 +615,33 @@ function resChanged(info){reroll();buildSheet();fillAns();buildLegend();st._info
 
 /* ---------- 學習單 ---------- */
 let SHEET;
-function makeSheet(){const n=nominal,o=ohmTxt;SHEET=[
+function makeSheet(){const n=nominal,o=ohmTxt;
+  const Rr=R=>R.R3*R.R4/(R.R3+R.R4),Rl=R=>R.R1*R.R2/(R.R1+R.R2),par=(x,y)=>x*y/(x+y);
+  const Va=R=>9*par(Rr(R),R.R2)/(R.R1+par(Rr(R),R.R2)),Vb=R=>3*par(Rl(R),R.R3)/(R.R4+par(Rl(R),R.R3));
+  const f1=v=>Math.round(v*10)/10;
+  SHEET=[
   {sec:"3. 9V、3V 換成短路線，取出 330Ω，Ω 檔量 ab 兩端"},
-  {k:"m1",label:"Rab = RTh =",unit:"Ω",type:"meas",exp:()=>rTh(actual)},
-  {sec:"4. 接上兩電壓源（330Ω 仍取出），DCV 檔量 ab 兩端"},
-  {k:"m2",label:"Vab = ETh =",unit:"V",type:"meas",exp:()=>eTh(actual,9,3)},
-  {sec:"5. 戴維寧等效電路圖：依上方 m1、m2 自動繪出（見「步驟 5」區塊）"},
+  {k:"m1",label:"Rab = RN =",unit:"Ω",type:"meas",exp:()=>rTh(actual)},
+  {sec:"4. 接回兩電壓源（330Ω 仍取出），電流檔紅棒接 a、黑棒接 b"},
+  {k:"m2",label:"Iab = IN =",unit:"mA",type:"meas",exp:()=>iSC(actual,9,3)*1000},
+  {sec:"5. 諾頓等效電路圖：依上方 m1、m2 自動繪出（見「步驟 5」區塊）"},
   {sec:"6. 以計算結果驗證量測之結果"},
-  {k:"c1",label:`(1) RTh = ${n.R1}×${n.R2}/(${n.R1}+${n.R2}) + ${n.R3}×${n.R4}/(${n.R3}+${n.R4})`,unit:"Ω",type:"calc",exp:()=>rTh(n)},
-  {k:"c2",label:`(2) ETh = 9 × ${n.R2}/(${n.R2}+${n.R1}) − ${n.R3}/(${n.R3}+${n.R4}) × 3`,unit:"V",type:"calc",exp:()=>eTh(n,9,3)},
+  {k:"c1",label:`(1) RN = ${n.R1}×${n.R2}/(${n.R1}+${n.R2}) + ${n.R3}×${n.R4}/(${n.R3}+${n.R4})`,unit:"Ω",type:"calc",exp:()=>rTh(n)},
+  {k:"c2",label:`(2)(a) 3V 短路：${f1(Rr(n))}Ω//${n.R2}Ω = ${f1(par(Rr(n),n.R2))}Ω，Va = 9 × ${f1(par(Rr(n),n.R2))}/(${n.R1}+${f1(par(Rr(n),n.R2))})`,unit:"V",type:"calc",exp:()=>Va(n)},
+  {k:"c3",label:`　　IN1 = Va ÷ ${f1(Rr(n))}Ω（由 a 向 b）`,unit:"mA",type:"calc",exp:()=>Va(n)/Rr(n)*1000},
+  {k:"c4",label:`(2)(b) 9V 短路：${f1(Rl(n))}Ω//${n.R3}Ω = ${f1(par(Rl(n),n.R3))}Ω，Vb = 3 × ${f1(par(Rl(n),n.R3))}/(${n.R4}+${f1(par(Rl(n),n.R3))})`,unit:"V",type:"calc",exp:()=>Vb(n)},
+  {k:"c5",label:`　　IN2 = Vb ÷ ${f1(Rl(n))}Ω（由 b 向 a）`,unit:"mA",type:"calc",exp:()=>Vb(n)/Rl(n)*1000},
+  {k:"c6",label:"(2)(c) IN = IN1 − IN2",unit:"mA",type:"calc",exp:()=>(Va(n)/Rr(n)-Vb(n)/Rl(n))*1000},
   {sec:"7. 回答問題"},
   {k:"q1",label:"量測與計算值，兩者是否相近？",type:"yn"},
-  {sec:`驗證（補充）：接回 ${o(n.RL)}，比較等效電路與原電路`},
-  {k:"c3",label:`等效電路預測 IL = ETh ÷ (RTh + ${o(n.RL)})（用計算值）`,unit:"mA",type:"calc",exp:()=>eTh(n,9,3)/(rTh(n)+n.RL)*1000},
-  {k:"m3",label:`原電路實測：串入電表量 ${o(n.RL)} 的電流 IL =`,unit:"mA",type:"meas",exp:()=>solve(actual,9,3,true).IL*1000},
-  {k:"q2",label:"等效電路預測的 IL 與原電路實測是否相近？",type:"yn"}];}
-const KEY="ws5-sheet";let saved={};try{saved=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){}
+  {sec:"補充量測：用電表驗證重疊定理（電流表仍跨接 ab，填讀值大小）"},
+  {k:"m3",label:"3V 換短路線，IN1 =",unit:"mA",type:"meas",exp:()=>iSC(actual,9,0)*1000},
+  {k:"m4",label:"9V 換短路線，IN2 =（讀值為負，填大小）",unit:"mA",type:"meas",abs:true,exp:()=>-iSC(actual,0,3)*1000},
+  {sec:`驗證（補充）：接回 ${o(n.RL)}，比較諾頓等效電路與原電路`},
+  {k:"c7",label:`諾頓電路預測 IL = IN × RN ÷ (RN + ${o(n.RL)})（用計算值）`,unit:"mA",type:"calc",exp:()=>{const r=rTh(n);return iSC(n,9,3)*r/(r+n.RL)*1000}},
+  {k:"m5",label:`原電路實測：串入電表量 ${o(n.RL)} 的電流 IL =`,unit:"mA",type:"meas",exp:()=>solve(actual,9,3,true).IL*1000},
+  {k:"q2",label:"諾頓電路預測的 IL 與原電路實測是否相近？",type:"yn"}];}
+const KEY="ws6-sheet";let saved={};try{saved=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){}
 let showAns=false;
 function buildSheet(){
   makeSheet();
@@ -622,11 +659,11 @@ function buildSheet(){
 function fillAns(){
   SHEET.forEach(r=>{if(!r.k)return;const a=$("#an-"+r.k);
     if(r.exp)a.textContent="參考 "+r.exp().toFixed(r.unit==="Ω"?1:r.unit==="V"?3:2);
-    else a.textContent={q1:"參考 是（電阻有 ±5% 誤差，略有差異屬正常）",q2:"參考 是（戴維寧等效電路對外部負載完全等效）"}[r.k]||""})}
+    else a.textContent={q1:"參考 是（電阻有 ±5% 誤差，略有差異屬正常）",q2:"參考 是（諾頓等效電路對外部負載完全等效）"}[r.k]||""})}
 function check(){
   SHEET.forEach(r=>{if(!r.k||!r.exp)return;const e=$("#ws-"+r.k),mk=$("#mk-"+r.k);
     if(e.value===""){mk.textContent="";mk.className="mark";return}
-    const v=parseFloat(e.value),x=r.exp(),ok=Math.abs(v-x)<=Math.max(Math.abs(x)*(r.type==="meas"?0.03:0.02),0.005);
+    const v=r.abs?Math.abs(parseFloat(e.value)):parseFloat(e.value),x=r.exp(),ok=Math.abs(v-x)<=Math.max(Math.abs(x)*(r.type==="meas"?0.03:0.02),0.005);
     mk.textContent=ok?"✓ 正確":"✗ 再檢查";mk.className="mark "+(ok?"ok":"bad")});
 }
 
