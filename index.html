@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>基本電學實習 動態網頁</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<style>
+:root{--bg:#eef1ee;--panel:#ffffff;--ink:#1d2622;--muted:#5d6b64;--line:#cfd8d2;--accent:#1f7a5a;
+  --font-body:"Noto Sans TC","Microsoft JhengHei","PingFang TC",sans-serif}
+@media (prefers-color-scheme: dark){:root{--bg:#141a17;--panel:#1c2420;--ink:#e3ebe6;--muted:#9aaba2;--line:#33403a;--accent:#4cc395;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.6;padding:28px 16px 40px}
+.wrap{max-width:960px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+.eyebrow{font-size:12px;letter-spacing:.12em;color:var(--accent);font-weight:700}
+h1{margin:2px 0 6px;font-size:clamp(24px,4vw,32px);font-weight:900;line-height:1.25}
+.sub{color:var(--muted);margin:0;max-width:70ch}
+h2{font-size:17px;margin:0 0 10px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;list-style:none;margin:0;padding:0}
+.card{display:flex;flex-direction:column;gap:6px;height:100%;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;color:inherit;text-decoration:none}
+a.card:hover,a.card:focus-visible{border-color:var(--accent);outline:none;box-shadow:0 0 0 2px var(--accent)}
+.no{font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.06em}
+.card b{font-size:16.5px}
+.card span.d{font-size:13.5px;color:var(--muted)}
+.card.todo{opacity:.55;border-style:dashed}
+footer{font-size:12.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">基本電學實習 · 第 3 章 直流電路實作</div>
+    <h1>工作項目動態網頁</h1>
+    <p class="sub">每個工作項目都有可操作的電路圖與麵包板接線圖、數位三用電表、可更換的色碼電阻，以及可檢查答案的學習單。</p>
+  </header>
+
+  <section>
+    <h2>3-2 串並聯電路與惠斯登電橋</h2>
+    <ul class="cards">
+      <li><a class="card" href="ch3-item1.html"><span class="no">工作項目 1</span><b>串並聯電路值之量測</b><span class="d">量測各點電壓與各支路電流，驗證串並聯電路的關係。</span></a></li>
+      <li><a class="card" href="ch3-item2.html"><span class="no">工作項目 2</span><b>判斷串並聯電路系統排列之電阻值</b><span class="d">梯形電阻網路逐步化簡，並以歐姆檔量測總電阻。</span></a></li>
+      <li><a class="card" href="ch3-item3.html"><span class="no">工作項目 3</span><b>惠斯登電橋之平衡條件求未知電阻</b><span class="d">調整可變電阻使電橋平衡，以 LED 或檢流計判斷。</span></a></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>3-3 重疊定理</h2>
+    <ul class="cards">
+      <li><a class="card" href="ch3-item4.html"><span class="no">工作項目 4</span><b>重疊定理實習</b><span class="d">兩電源輪流換成短路線，量測電流並相加驗證。</span></a></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>3-4 戴維寧及諾頓定理</h2>
+    <ul class="cards">
+      <li><a class="card" href="ch3-item5.html"><span class="no">工作項目 5</span><b>量測等效電阻與電壓並繪戴維寧等效電路圖</b><span class="d">量 R<sub>Th</sub> 與開路電壓 E<sub>Th</sub>，接回負載驗證。</span></a></li>
+      <li><a class="card" href="ch3-item6.html"><span class="no">工作項目 6</span><b>量測等效電阻與短路電流並繪諾頓等效電路圖</b><span class="d">量 R<sub>N</sub> 與短路電流 I<sub>N</sub>，以重疊定理計算驗證。</span></a></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>3-5 最大功率轉移定理</h2>
+    <ul class="cards">
+      <li><div class="card todo"><span class="no">工作項目 7</span><b>製作功率消耗曲線圖</b><span class="d">製作中</span></div></li>
+      <li><div class="card todo"><span class="no">工作項目 8</span><b>量測等效電壓與電阻值，並計算最大功率值</b><span class="d">製作中</span></div></li>
+    </ul>
+  </section>
+
+  <footer>學習單紀錄只存在各自的瀏覽器中，換電腦或清除瀏覽資料後會消失。</footer>
+</div>
+</body>
+</html>

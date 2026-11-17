@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>戴維寧等效電路實習</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* 版面：上方雙電源電路（電路圖／麵包板）＋數位三用電表，中段電源與負載控制，戴維寧等效電路，下方學習單 */
+:root{
+  --bg:#eef1ee;--panel:#ffffff;--ink:#1d2622;--muted:#5d6b64;--line:#cfd8d2;--wire:#2b3a33;
+  --accent:#1f7a5a;--meter:#e6b92e;--meter-ink:#2a2208;--lcd:#c7d3b4;--lcd-ink:#1b2417;
+  --red:#d23a2f;--black:#222;--ok:#1f7a3a;--warn:#b26a00;--bad:#c0392b;--cur:#d23a2f;--short:#e08a00;
+  --font-body:"Noto Sans TC","Microsoft JhengHei","PingFang TC",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141a17;--panel:#1c2420;--ink:#e3ebe6;--muted:#9aaba2;--line:#33403a;--wire:#c9d6cf;
+  --accent:#4cc395;--meter:#c99d1e;--meter-ink:#1c1604;--lcd:#b9c7a4;--lcd-ink:#141c10;--red:#ff6a5c;--black:#e3ebe6;
+  --ok:#5fd08a;--warn:#f0a83a;--bad:#ff7a6b;--cur:#ff7a6b;--short:#ffb347;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141a17;--panel:#1c2420;--ink:#e3ebe6;--muted:#9aaba2;--line:#33403a;--wire:#c9d6cf;
+  --accent:#4cc395;--meter:#c99d1e;--meter-ink:#1c1604;--lcd:#b9c7a4;--lcd-ink:#141c10;--red:#ff6a5c;--black:#e3ebe6;
+  --ok:#5fd08a;--warn:#f0a83a;--bad:#ff7a6b;--cur:#ff7a6b;--short:#ffb347;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+.eyebrow{font-size:12px;letter-spacing:.12em;color:var(--accent);font-weight:700}
+h1{margin:2px 0 0;font-size:clamp(22px,3.4vw,30px);font-weight:900;text-wrap:balance;line-height:1.25}
+.sub{color:var(--muted);font-size:14px;margin:0;max-width:80ch}
+h2{font-size:17px;margin:0;font-weight:700}
+.grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:20px}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button,select,input{font:inherit;color:inherit}
+.btn{border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:5px 11px;cursor:pointer;font-size:14px}
+.btn:hover{border-color:var(--accent)}
+.btn:focus-visible,.dial button:focus-visible,.node-hit:focus-visible,.brk:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.btn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.hint{font-size:13.5px;color:var(--muted)}
+.svgbox{overflow-x:auto}
+svg.circuit{width:100%;min-width:540px;height:auto;display:block}
+#bb{min-width:600px}
+.wire{fill:none;stroke:var(--wire);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+#bb .wire{stroke:#8d8d86;stroke-width:1.8}
+.lbl{fill:var(--ink);font-size:13px;font-family:var(--font-mono)}
+.small{fill:var(--muted);font-size:11px;font-family:var(--font-body)}
+.rname{fill:var(--accent);font-size:13px;font-weight:700}
+.cur{fill:var(--cur);font-size:14px;font-style:italic;font-family:Georgia,serif}
+.nodelbl{fill:var(--accent);font-size:17px;font-weight:700;font-style:italic;font-family:Georgia,serif}
+.node{fill:var(--wire)}
+.node-hit{fill:transparent;cursor:pointer}
+.node-hit:hover+.ring,.ring.red,.ring.black{opacity:1}
+.ring{fill:none;stroke:var(--accent);stroke-width:2;opacity:0;pointer-events:none}
+.ring.red{stroke:var(--red);stroke-width:3.5}.ring.black{stroke:var(--black);stroke-width:3.5}
+.probe-tag{font-size:11px;font-weight:700}
+.brk{cursor:pointer}
+.brk .tgt{fill:var(--panel);stroke:var(--accent);stroke-width:1.6;stroke-dasharray:3 2}
+.brk .x{stroke:var(--accent);stroke-width:2}
+.ammeter circle{fill:var(--panel);stroke:var(--meter);stroke-width:3}
+.ammeter text{fill:var(--ink);font-weight:700;font-size:13px}
+/* 電源控制 */
+.srcs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:640px){.srcs{grid-template-columns:minmax(0,1fr)}}
+.src{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
+.src h3{margin:0;font-size:15px}
+.src input[type=number]{width:5em;padding:3px 6px;border:1px solid var(--line);border-radius:5px;background:var(--panel);font-family:var(--font-mono)}
+.sumbar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:640px){.sumbar{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.cell{border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
+.cell b{display:block;font-size:12px;color:var(--muted);font-weight:700}
+.cell span{font-family:var(--font-mono);font-size:17px;font-variant-numeric:tabular-nums}
+.cell.hl{border-color:var(--accent)}
+/* 數位電表 */
+.meter{background:var(--meter);color:var(--meter-ink);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:12px;border:none}
+.meter h2{color:var(--meter-ink)}
+.lcd{background:var(--lcd);color:var(--lcd-ink);border-radius:8px;border:6px solid #2b2b2b;padding:8px 14px 10px;display:grid;grid-template-columns:auto 1fr;gap:0 10px;align-items:end;box-shadow:inset 0 2px 8px rgba(0,0,0,.25)}
+.lcd .ann{grid-column:1/-1;display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:12px;font-weight:600}
+.lcd .dim{opacity:.18}
+.lcd .sign{font-family:var(--font-mono);font-size:34px;font-weight:600;width:.7em;line-height:1}
+.lcd .val{font-family:var(--font-mono);font-size:clamp(40px,7vw,54px);font-weight:600;font-variant-numeric:tabular-nums;text-align:right;line-height:1.05;letter-spacing:.04em}
+.lcd .unit{grid-column:2;text-align:right;font-family:var(--font-mono);font-size:15px;font-weight:600}
+.dial{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.dial .grp{grid-column:1/-1;font-size:12px;font-weight:700;letter-spacing:.08em;margin-top:2px}
+.dial button{border:1.5px solid rgba(0,0,0,.35);background:rgba(255,255,255,.45);color:var(--meter-ink);border-radius:6px;padding:5px 2px;cursor:pointer;font-family:var(--font-mono);font-size:13px}
+.dial button.on{background:#222;color:#ffd84a;border-color:#222}
+.msg{border-radius:8px;padding:8px 10px;font-size:14px;background:rgba(255,255,255,.55);color:var(--meter-ink);min-height:2.6em}
+.msg.bad{background:#fbe0dc;color:#7a1d12}.msg.warn{background:#fff0cf;color:#6a4200}.msg.ok{background:#dff3e5;color:#13492a}
+.meter .btn{background:rgba(255,255,255,.5);border-color:rgba(0,0,0,.3);color:var(--meter-ink)}
+.log{font-family:var(--font-mono);font-size:13px;margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:2px;max-height:150px;overflow:auto}
+.log li{background:rgba(255,255,255,.45);border-radius:4px;padding:2px 8px}
+/* 學習單 */
+.sheet table{border-collapse:collapse;width:100%;min-width:560px;font-size:14.5px}
+.sheet th,.sheet td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:middle}
+.sheet th{font-size:12.5px;color:var(--muted);font-weight:700;letter-spacing:.05em}
+.sheet tr.sec td{background:var(--bg);font-weight:700;color:var(--accent)}
+.sheet input[type=number]{width:110px;padding:4px 6px;border:1px solid var(--line);border-radius:5px;background:var(--panel);font-family:var(--font-mono)}
+.sheet select{padding:3px 6px;border:1px solid var(--line);border-radius:5px;background:var(--panel)}
+.mark{font-weight:700;font-size:14px;white-space:nowrap}.mark.ok{color:var(--ok)}.mark.bad{color:var(--bad)}
+.ans{font-family:var(--font-mono);color:var(--muted);font-size:13px}
+.mono{font-family:var(--font-mono)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted)}
+.quick{display:flex;flex-wrap:wrap;gap:6px}.quick .btn{font-size:13px;padding:4px 9px}
+footer{font-size:12.5px;color:var(--muted)}
+.srcs{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:900px){.srcs{grid-template-columns:minmax(0,1fr)}}
+.eqwrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:center}
+@media (max-width:760px){.eqwrap{grid-template-columns:minmax(0,1fr)}}
+svg.eq{width:100%;max-width:460px;height:auto;display:block}
+.eqnote{font-size:14px;display:flex;flex-direction:column;gap:6px}
+.eqnote .big{font-family:var(--font-mono);font-size:16px}
+</style>
+
+<div class="wrap">
+  <header>
+    <a href="index.html" style="display:inline-block;font-size:13px;color:var(--accent);text-decoration:none;margin-bottom:4px">← 回實習目錄</a>
+    <div class="eyebrow">基本電學實習 第 3 章 · 3-4 戴維寧及諾頓定理</div>
+    <h1>工作項目 5：量測等效電阻與電壓並繪戴維寧等效電路圖</h1>
+    <p class="sub">以 330Ω 為負載，從 a、b 兩端看進去，整個雙電源電路可以化成一個電壓源 E<sub>Th</sub> 串聯一個電阻 R<sub>Th</sub>。先把電源換成短路線、取出 330Ω 量 R<sub>Th</sub>，再接回電源量開路電壓 E<sub>Th</sub>，最後接回 330Ω 驗證等效電路。</p>
+  </header>
+
+  <div class="grid">
+    <section class="panel" aria-label="實習電路">
+      <div class="row" style="justify-content:space-between">
+        <h2>圖 3-19　實習電路圖</h2>
+        <div class="row" role="tablist" aria-label="檢視方式">
+          <button class="btn on" id="tabSch" type="button" role="tab" aria-selected="true">電路圖</button>
+          <button class="btn" id="tabBB" type="button" role="tab" aria-selected="false">麵包板接線圖</button>
+        </div>
+      </div>
+      <div class="svgbox" id="schBox"><svg class="circuit" id="circ" viewBox="0 0 640 320" role="img" aria-label="戴維寧定理實習電路"></svg></div>
+      <div class="svgbox" id="bbBox" hidden>
+        <svg class="circuit" id="bb" viewBox="0 0 650 360" role="img" aria-label="麵包板接線圖"></svg>
+        <p class="hint" style="margin:6px 0 0">9V 電池插在第 2、4 行，3V（兩顆 1.5V 串聯）插在第 24、26 行，負端以黑色跳線接到下方藍色軌（共同點）。第 10 行是 a 點、第 18 行是 b 點；紫色跳線連到 330Ω，量電流時點 ✕ 取下跳線、串入電表。</p>
+      </div>
+      <div class="legend" id="ccLegend"></div>
+      <div>
+        <div class="hint" style="margin-bottom:6px">依課本步驟快速設定：</div>
+        <div class="quick" id="quick"></div>
+      </div>
+    </section>
+
+    <section class="panel meter" aria-label="數位三用電表">
+      <h2>數位三用電表</h2>
+      <div class="lcd" aria-live="polite">
+        <div class="ann"><span id="aMode">Ω</span><span id="aRange"></span><span id="aOL" class="dim">OL</span></div>
+        <div class="sign" id="dSign"></div>
+        <div class="val" id="dVal">----</div>
+        <div class="unit" id="dUnit">Ω</div>
+      </div>
+      <div class="msg" id="msg" role="status"></div>
+      <div class="dial" id="dial" role="group" aria-label="檔位旋鈕"></div>
+      <div class="row">
+        <button class="btn" id="clearProbe" type="button">移開電表</button>
+        <button class="btn" id="logBtn" type="button">記錄此讀值</button>
+      </div>
+      <ol class="log" id="log"></ol>
+    </section>
+  </div>
+
+  <section class="panel" aria-label="電源、負載與電阻">
+    <h2>電源、負載與電阻設定</h2>
+    <div class="srcs">
+      <div class="src">
+        <h3>左電源 9V</h3>
+        <div class="row">
+          <button class="btn on" id="e1Bat" type="button">接上電池</button>
+          <button class="btn" id="e1Sh" type="button">換成短路線</button>
+          <label class="hint" for="e1V">電壓</label><input type="number" id="e1V" min="0" max="30" step="0.1" value="9"><span class="hint">V</span>
+        </div>
+      </div>
+      <div class="src">
+        <h3>右電源 3V（1.5V × 2）</h3>
+        <div class="row">
+          <button class="btn on" id="e2Bat" type="button">接上電池</button>
+          <button class="btn" id="e2Sh" type="button">換成短路線</button>
+          <label class="hint" for="e2V">電壓</label><input type="number" id="e2V" min="0" max="30" step="0.1" value="3"><span class="hint">V</span>
+        </div>
+      </div>
+      <div class="src">
+        <h3>負載 330Ω（a、b 之間）</h3>
+        <div class="row">
+          <button class="btn on" id="ldOn" type="button">接上 330Ω</button>
+          <button class="btn" id="ldOff" type="button">取出 330Ω（ab 開路）</button>
+        </div>
+      </div>
+    </div>
+    <div class="hint">依目前電阻與電壓計算的結果：</div>
+    <div class="sumbar">
+      <div class="cell"><b>R<sub>Th</sub>（電源短路、取出 330Ω）</b><span id="sR">—</span></div>
+      <div class="cell"><b>E<sub>Th</sub>（ab 開路電壓）</b><span id="sE">—</span></div>
+      <div class="cell"><b>等效電路預測 I<sub>L</sub></b><span id="sP">—</span></div>
+      <div class="cell hl"><b>原電路實際 I<sub>L</sub></b><span id="sI">—</span></div>
+    </div>
+    <div class="row"><label class="hint"><input type="checkbox" id="showSum"> 顯示上方計算結果（教師）</label></div>
+    <div>
+      <div class="hint" style="margin-bottom:6px">更換電阻（點電路上的電阻也可以直接選）：</div>
+      <div class="row" id="resSet"></div>
+    </div>
+    <div class="row">
+      <label class="hint"><input type="checkbox" id="tolChk" checked> 電阻含 ±5% 誤差</label>
+      <button class="btn" id="reroll" type="button">換一組電阻</button>
+    </div>
+  </section>
+
+  <section class="panel" aria-label="戴維寧等效電路">
+    <h2>步驟 5　戴維寧等效電路圖</h2>
+    <div class="eqwrap">
+      <svg class="eq" id="eq" viewBox="0 0 460 210" role="img" aria-label="依量測值繪出的戴維寧等效電路"></svg>
+      <div class="eqnote" id="eqNote"></div>
+    </div>
+  </section>
+
+  <section class="panel sheet" aria-label="學習單">
+    <div class="row" style="justify-content:space-between">
+      <h2>工作程序與紀錄</h2>
+      <div class="row">
+        <button class="btn" id="checkBtn" type="button">檢查答案</button>
+        <button class="btn" id="ansBtn" type="button">顯示參考答案</button>
+        <button class="btn" id="resetBtn" type="button">清空紀錄</button>
+      </div>
+    </div>
+    <p class="hint" style="margin:0">量測值以左 9V、右 3V 為準，與模擬值比對（容許 ±3%）；計算值依標稱值（容許 ±2%）。數位電表沒有 Ω×100、DC10V 檔，請改用 2kΩ（或 200Ω）、20V（或 2V）檔。</p>
+    <div class="svgbox"><table id="sheet"></table></div>
+  </section>
+
+  <footer>模擬假設：電池為理想電壓源（內阻 0），短路線電阻 0；電表為理想 3½ 位數位電表（電壓檔內阻無限大、電流檔內阻 0）。</footer>
+</div>
+
+<script>
+(()=>{
+const $=s=>document.querySelector(s);
+const NS="http://www.w3.org/2000/svg";
+const BOOK={R1:150,R2:100,RL:330,R3:150,R4:100};
+const nominal={...BOOK},actual={};
+const st={e1:true,e2:true,V1:9,V2:3,load:true,range:"R2k",red:null,black:null,brk:null,tol:true,showSum:false};
+function reroll(){for(const k in nominal)actual[k]=st.tol?nominal[k]*(1+(Math.random()*2-1)*0.05):nominal[k]}
+reroll();
+const E12=[];[10,100,1000].forEach(m=>[10,12,15,18,22,27,33,39,47,56,68,82].forEach(v=>E12.push(v*m/10)));E12.push(10000);
+const ohmTxt=v=>v>=1000?(v/1000)+"kΩ":v+"Ω";
+const NN={a:"a",b:"b",p:"9V 正端",q:"3V 正端",g:"共同點"};
+
+/* ---------- 電路計算：節點 a、b，共同點 g 接地 ---------- */
+function solve(R,E1,E2,load){
+  const gL=load?1/R.RL:0;
+  const a11=1/R.R1+1/R.R2+gL,a22=1/R.R3+1/R.R4+gL,a12=-gL,det=a11*a22-a12*a12;
+  const s1=E1/R.R1,s2=E2/R.R4;
+  const Va=(s1*a22-a12*s2)/det,Vb=(a11*s2-a12*s1)/det;
+  return {Va,Vb,IL:(Va-Vb)*gL,V:{p:E1,q:E2,g:0,a:Va,b:Vb}};
+}
+const cur=()=>solve(actual,st.e1?st.V1:0,st.e2?st.V2:0,st.load);
+const rTh=R=>R.R1*R.R2/(R.R1+R.R2)+R.R3*R.R4/(R.R3+R.R4);
+const eTh=(R,E1,E2)=>E1*R.R2/(R.R1+R.R2)-E2*R.R3/(R.R3+R.R4);
+// 兩電源都換成短路線時，任兩點電阻
+function rBetween(n1,n2){
+  const al=n=>n==="p"||n==="q"?"g":n,x=al(n1),y=al(n2);if(x===y)return 0;
+  const edges=[["a","g",actual.R1],["a","g",actual.R2],["b","g",actual.R3],["b","g",actual.R4]];
+  if(st.load)edges.push(["a","b",actual.RL]);
+  const nodes=["a","b","g"].filter(n=>n!==y),idx={};nodes.forEach((n,i)=>idx[n]=i);const N=nodes.length;
+  const A=Array.from({length:N},()=>Array(N).fill(0)),b=Array(N).fill(0);
+  edges.forEach(([u,v,r])=>{const g=1/r,i=idx[u],j=idx[v];if(i!=null)A[i][i]+=g;if(j!=null)A[j][j]+=g;if(i!=null&&j!=null){A[i][j]-=g;A[j][i]-=g}});
+  b[idx[x]]=1;return gauss(A,b)[idx[x]];
+}
+function gauss(A,b){
+  const n=b.length;A=A.map(r=>r.slice());b=b.slice();
+  for(let c=0;c<n;c++){let p=c;for(let r=c+1;r<n;r++)if(Math.abs(A[r][c])>Math.abs(A[p][c]))p=r;
+    [A[c],A[p]]=[A[p],A[c]];[b[c],b[p]]=[b[p],b[c]];
+    for(let r=0;r<n;r++){if(r===c)continue;const f=A[r][c]/A[c][c];for(let k=c;k<n;k++)A[r][k]-=f*A[c][k];b[r]-=f*b[c]}}
+  return b.map((v,i)=>v/A[i][i]);
+}
+
+/* ---------- 繪圖工具 ---------- */
+const BAND={0:["黑","#1a1a1a"],1:["棕","#7a4a1e"],2:["紅","#d32f2f"],3:["橙","#ef7d1a"],4:["黃","#f2d024"],5:["綠","#2e8b3e"],6:["藍","#1f5fbf"],7:["紫","#7b3fb5"],8:["灰","#8c8c8c"],9:["白","#f4f4f4"]};
+function bandsOf(ohm){const e=Math.floor(Math.log10(ohm)+1e-9)-1;const two=Math.round(ohm/Math.pow(10,e));return [Math.floor(two/10),two%10,e]}
+const ccName=v=>{const [a,b,m]=bandsOf(v);return BAND[a][0]+BAND[b][0]+BAND[m][0]+"金"};
+function el(tag,attrs,p){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);p.appendChild(e);return e}
+function colorRes(root,x1,y1,x2,y2,ohm,k){
+  const vert=x1===x2,cx=(x1+x2)/2,cy=(y1+y2)/2,L=50,W=17,g=el("g",{style:"cursor:pointer"},root);
+  g.addEventListener("click",()=>{const s=$("#rs-"+k);if(s){s.focus();s.scrollIntoView({block:"nearest",behavior:"smooth"})}});
+  const [d1,d2,m]=bandsOf(ohm);
+  el("title",{},g).textContent=`${k}：${ccName(ohm)} = ${ohmTxt(ohm)} ±5%`;
+  const rx=vert?cx-W/2:cx-L/2,ry=vert?cy-L/2:cy-W/2;
+  el("path",{d:vert?`M${x1},${y1} L${cx},${ry} M${cx},${ry+L} L${x2},${y2}`:`M${x1},${y1} L${rx},${cy} M${rx+L},${cy} L${x2},${y2}`,class:"wire"},g);
+  el("rect",{x:rx,y:ry,width:vert?W:L,height:vert?L:W,rx:7,fill:"#dcc48e"},g);
+  [[8,BAND[d1][1]],[16,BAND[d2][1]],[24,BAND[m][1]],[38,"#c9a227"]].forEach(([p,c])=>
+    el("rect",vert?{x:rx,y:ry+p,width:W,height:4.5,fill:c}:{x:rx+p,y:ry,width:4.5,height:W,fill:c},g));
+  el("rect",{x:rx,y:ry,width:vert?W:L,height:vert?L:W,rx:7,fill:"none",stroke:"#8a7342","stroke-width":1.2},g);
+}
+// 直立電池（+ 在上）或短路線
+function battV(S,x,yTop,yBot,on,volt,labRight){
+  const my=(yTop+yBot)/2;
+  if(on){
+    el("path",{d:`M${x},${yTop} L${x},${my-8} M${x},${my+8} L${x},${yBot}`,class:"wire"},S);
+    el("line",{x1:x-16,y1:my-8,x2:x+16,y2:my-8,stroke:"var(--wire)","stroke-width":2.6},S);
+    el("line",{x1:x-8,y1:my+8,x2:x+8,y2:my+8,stroke:"var(--wire)","stroke-width":5},S);
+    const sx=labRight?x-22:x+22,sa=labRight?"end":"start";
+    el("text",{x:sx,y:my-8,class:"lbl","text-anchor":sa,style:"fill:#1f5fbf"},S).textContent="+";
+    el("text",{x:sx,y:my+16,class:"lbl","text-anchor":sa,style:"fill:#1f5fbf"},S).textContent="−";
+    el("text",{x:x+(labRight?20:-20),y:my+5,class:"lbl","text-anchor":labRight?"start":"end"},S).textContent=volt+" V";
+  }else{
+    el("path",{d:`M${x},${yTop} L${x},${yBot}`,fill:"none",stroke:"var(--short)","stroke-width":3.2,"stroke-linecap":"round"},S);
+    el("text",{x:x+(labRight?12:-12),y:my+4,class:"small","text-anchor":labRight?"start":"end",style:"fill:var(--short)"},S).textContent="短路線";
+  }
+}
+function keyAct(node,go){node.addEventListener("click",go);node.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go()}})}
+
+/* ---------- 電路圖（圖 3-19） ---------- */
+function drawSch(){
+  const S=$("#circ");S.innerHTML="";
+  const w=d=>el("path",{d,class:"wire"},S);
+  const T=60,B=270;
+  battV(S,90,T,B,st.e1,st.V1,false);
+  w(`M90,${T} L110,${T}`);colorRes(S,110,T,220,T,nominal.R1,"R1");w(`M220,${T} L240,${T}`);
+  colorRes(S,240,T,240,B,nominal.R2,"R2");
+  el("text",{x:165,y:T-18,class:"rname","text-anchor":"middle"},S).textContent="R1 "+ohmTxt(nominal.R1);
+  el("text",{x:256,y:162,class:"rname"},S).textContent="R2";el("text",{x:256,y:178,class:"lbl"},S).textContent=ohmTxt(nominal.R2);
+  // 負載 330Ω（含斷點）
+  const isA=R().type==="A";
+  if(st.load){
+    w(`M240,${T} L246,${T}`);
+    if(st.brk==="L"&&isA){
+      const a=el("g",{class:"ammeter"},S);el("circle",{cx:256,cy:T,r:13},a);el("text",{x:256,y:T+5,"text-anchor":"middle"},a).textContent="A";
+      el("text",{x:246,y:T+30,class:"probe-tag",fill:"var(--red)","text-anchor":"middle"},S).textContent="紅";
+      el("text",{x:268,y:T+30,class:"probe-tag",fill:"var(--black)","text-anchor":"middle"},S).textContent="黑";
+    }else{
+      w(`M246,${T} L266,${T}`);
+      if(isA){
+        const b=el("g",{class:"brk",tabindex:0,role:"button","aria-label":"取下 a 至 330Ω 的連接線並串入電表"},S);
+        el("circle",{cx:256,cy:T,r:9,class:"tgt"},b);
+        el("path",{d:`M252,${T-4} L260,${T+4} M260,${T-4} L252,${T+4}`,class:"x"},b);
+        el("title",{},b).textContent="取下 a 至 330Ω 的連接線，串入電表";
+        keyAct(b,()=>{st.brk="L";update()});
+      }
+    }
+    colorRes(S,266,T,420,T,nominal.RL,"RL");
+    el("text",{x:343,y:T-18,class:"rname","text-anchor":"middle"},S).textContent="RL "+ohmTxt(nominal.RL);
+    el("path",{d:`M323,${T+26} l40,0 m-6,-4 l6,4 l-6,4`,stroke:"var(--cur)","stroke-width":1.6,fill:"none"},S);
+    el("text",{x:343,y:T+44,class:"cur","text-anchor":"middle"},S).textContent="IL";
+  }else{
+    w(`M240,${T} L262,${T}`);w(`M408,${T} L420,${T}`);
+    [262,408].forEach(x=>el("circle",{cx:x,cy:T,r:4,fill:"var(--panel)",stroke:"var(--wire)","stroke-width":2},S));
+    el("text",{x:335,y:T+4,class:"small","text-anchor":"middle"},S).textContent="（330Ω 已取出，ab 開路）";
+  }
+  colorRes(S,420,T,420,B,nominal.R3,"R3");
+  el("text",{x:436,y:162,class:"rname"},S).textContent="R3";el("text",{x:436,y:178,class:"lbl"},S).textContent=ohmTxt(nominal.R3);
+  w(`M420,${T} L440,${T}`);colorRes(S,440,T,540,T,nominal.R4,"R4");w(`M540,${T} L560,${T}`);
+  el("text",{x:490,y:T-18,class:"rname","text-anchor":"middle"},S).textContent="R4 "+ohmTxt(nominal.R4);
+  battV(S,560,T,B,st.e2,st.V2,true);
+  w(`M90,${B} L560,${B}`);
+  // 節點
+  const NODES=[["a",240,T,"a",0,-24,22,22],["b",420,T,"b",0,-24,-24,22],["p",90,T,"",0,0,0,-12],["q",560,T,"",0,0,0,-12],["g",330,B,"",0,0,0,-12]];
+  NODES.forEach(([id,x,y,lab,dx,dy,tx,ty])=>{
+    el("circle",{cx:x,cy:y,r:4.5,class:"node"},S);
+    const hit=el("circle",{cx:x,cy:y,r:14,class:"node-hit",tabindex:0,role:"button","aria-label":"量測點 "+NN[id]},S);
+    el("title",{},hit).textContent=NN[id];
+    el("circle",{cx:x,cy:y,r:10,class:st.red===id?"ring red":st.black===id?"ring black":"ring"},S);
+    if(lab)el("text",{x:x+dx,y:y+dy,class:"nodelbl","text-anchor":"middle"},S).textContent=lab;
+    if(st.red===id||st.black===id)el("text",{x:x+tx,y:y+ty,class:"probe-tag",fill:st.red===id?"var(--red)":"var(--black)","text-anchor":"middle"},S).textContent=st.red===id?"紅棒":"黑棒";
+    keyAct(hit,()=>clickNode(id));
+  });
+  el("text",{x:330,y:B+20,class:"small","text-anchor":"middle"},S).textContent="共同點";
+}
+
+/* ---------- 麵包板 ---------- */
+function drawBB(){
+  const B=$("#bb");B.innerHTML="";
+  const e=(t,a)=>el(t,a,B);
+  const X=c=>90+c*17;
+  const Y=r=>({p:40,n:58,a:95,b:113,c:131,d:149,e:167,f:203,g:221,h:239,i:257,j:275,p2:312,n2:330})[r];
+  e("rect",{x:72,y:20,width:560,height:330,rx:10,fill:"#f4f3ee",stroke:"#b9b8ae","stroke-width":1.5});
+  e("rect",{x:72,y:180,width:560,height:9,fill:"#e0dfd5"});
+  [[31,"#d32f2f"],[67,"#1f5fbf"],[303,"#d32f2f"],[339,"#1f5fbf"]].forEach(([y,c])=>e("line",{x1:100,x2:610,y1:y,y2:y,stroke:c,"stroke-width":1.5}));
+  [["+",44,"#d32f2f"],["−",62,"#1f5fbf"],["+",316,"#d32f2f"],["−",334,"#1f5fbf"]].forEach(([s,y,c])=>{e("text",{x:84,y,fill:c,"font-size":14,"font-weight":700,"text-anchor":"middle"}).textContent=s});
+  for(let c=1;c<=30;c++){
+    ["p","n","a","b","c","d","e","f","g","h","i","j","p2","n2"].forEach(r=>e("rect",{x:X(c)-2.5,y:Y(r)-2.5,width:5,height:5,rx:1,fill:"#5b5c54"}));
+    if(c===1||c%5===0)e("text",{x:X(c),y:292,fill:"#8a8a80","font-size":9,"text-anchor":"middle","font-family":"IBM Plex Mono,monospace"}).textContent=c;
+  }
+  "abcdefghij".split("").forEach(r=>{e("text",{x:90,y:Y(r)+3,fill:"#8a8a80","font-size":9,"text-anchor":"middle","font-family":"IBM Plex Mono,monospace"}).textContent=r});
+  function jumper(c1,r1,c2,r2,color="#7b3fb5",lift=16){
+    const x1=X(c1),y1=Y(r1),x2=X(c2),y2=Y(r2),mx=(x1+x2)/2,my=(y1+y2)/2,vert=x1===x2;
+    e("path",{d:`M${x1},${y1} Q${vert?mx+lift:mx},${vert?my:my-lift} ${x2},${y2}`,fill:"none",stroke:color,"stroke-width":3.2,"stroke-linecap":"round"});
+    [[x1,y1],[x2,y2]].forEach(([x,y])=>e("circle",{cx:x,cy:y,r:3,fill:color}));
+  }
+  // 電池：+ 腳在 cP 欄、− 腳在 cN 欄（row a），本體畫在上方
+  function bat(cP,cN,on,volt){
+    const xp=X(cP),xn=X(cN),y=Y("a"),lo=Math.min(xp,xn),hi=Math.max(xp,xn);
+    if(on){
+      e("path",{d:`M${xp},${y} L${xp},${y-14} M${xn},${y} L${xn},${y-14}`,stroke:"#9a9a92","stroke-width":1.6});
+      e("rect",{x:lo-12,y:y-34,width:hi-lo+24,height:22,rx:4,fill:"#2b2f2c"});
+      e("rect",{x:xp<xn?lo-12:hi+2,y:y-34,width:10,height:22,rx:3,fill:"#c9a227"});
+      e("text",{x:(xp+xn)/2,y:y-19,"font-size":11,"font-weight":700,fill:"#ffd84a","text-anchor":"middle"}).textContent=volt+"V";
+      e("text",{x:xp,y:y+13,"font-size":10,"font-weight":700,fill:"#d32f2f","text-anchor":"middle"}).textContent="+";
+      e("text",{x:xn,y:y+13,"font-size":10,"font-weight":700,fill:"#1f5fbf","text-anchor":"middle"}).textContent="−";
+    }else{
+      jumper(cP,"a",cN,"a","#e08a00",10);
+      e("text",{x:(xp+xn)/2,y:y-16,"font-size":10,fill:"#b06a00","text-anchor":"middle"}).textContent="短路線";
+    }
+  }
+  // 左：9V（+ 第4行、− 第2行）→ R1 → a（第10行）→ R2 → 共同點
+  bat(4,2,st.e1,st.V1);jumper(2,"e",2,"n2","#333",-12);
+  colorRes(B,X(4),Y("c"),X(10),Y("c"),nominal.R1,"R1");
+  colorRes(B,X(10),Y("e"),X(10),Y("h"),nominal.R2,"R2");jumper(10,"j",10,"n2","#333");
+  // 右：3V（+ 第24行、− 第26行）→ R4 → b（第18行）→ R3 → 共同點
+  bat(24,26,st.e2,st.V2);jumper(26,"e",26,"n2","#333",12);
+  colorRes(B,X(18),Y("d"),X(24),Y("d"),nominal.R4,"R4");
+  colorRes(B,X(18),Y("e"),X(18),Y("h"),nominal.R3,"R3");jumper(18,"j",18,"n2","#333");
+  // 負載
+  const isA=R().type==="A";
+  if(st.load){
+    colorRes(B,X(12),Y("c"),X(18),Y("c"),nominal.RL,"RL");
+    const x1=X(10),x2=X(12),y=Y("b"),lift=12,mx=(x1+x2)/2;
+    if(st.brk==="L"&&isA){
+      const ay=y-lift-6;
+      e("path",{d:`M${x1},${y} Q${x1},${ay} ${mx},${ay}`,fill:"none",stroke:"#d32f2f","stroke-width":2.6});
+      e("path",{d:`M${mx},${ay} Q${x2},${ay} ${x2},${y}`,fill:"none",stroke:"#222","stroke-width":2.6});
+      e("circle",{cx:mx,cy:ay,r:11,fill:"#fff",stroke:"#e6b92e","stroke-width":3});
+      e("text",{x:mx,y:ay+4.5,"font-size":12,"font-weight":700,"text-anchor":"middle",fill:"#222"}).textContent="A";
+    }else{
+      jumper(10,"b",12,"b","#7b3fb5",lift);
+      if(isA){
+        const g=e("g",{class:"brk",tabindex:0,role:"button","aria-label":"取下 a 至 330Ω 的跳線並串入電表"});
+        const py=y-lift/2;
+        el("circle",{cx:mx,cy:py,r:8,fill:"#fff",stroke:"#1f7a5a","stroke-width":1.6,"stroke-dasharray":"3 2"},g);
+        el("path",{d:`M${mx-3.5},${py-3.5} L${mx+3.5},${py+3.5} M${mx+3.5},${py-3.5} L${mx-3.5},${py+3.5}`,stroke:"#1f7a5a","stroke-width":2},g);
+        keyAct(g,()=>{st.brk="L";update()});
+      }
+    }
+  }else{
+    e("text",{x:X(15),y:Y("c")+4,"font-size":10,fill:"#8a8a80","text-anchor":"middle"}).textContent="（330Ω 已取出）";
+  }
+  [["R1",7,Y("c")-13],["R4",21,Y("d")+19],["RL",15,Y("c")-13]].forEach(([t,c,y])=>{if(t==="RL"&&!st.load)return;e("text",{x:X(c),y,"font-size":11,"font-weight":700,fill:"#1f7a5a","text-anchor":"middle"}).textContent=t});
+  [["R2",10],["R3",18]].forEach(([t,c])=>e("text",{x:X(c)+14,y:Y("g"),"font-size":11,"font-weight":700,fill:"#1f7a5a"}).textContent=t);
+  // 量測點
+  [["a",10,"a"],["b",18,"b"],["p",4,"e"],["q",24,"e"],["g",14,"n2"]].forEach(([id,c,r])=>{
+    const x=X(c),y=Y(r);
+    const hit=e("circle",{cx:x,cy:y,r:10,class:"node-hit",tabindex:0,role:"button","aria-label":"麵包板量測點 "+NN[id]});
+    el("title",{},hit).textContent=NN[id];
+    const ring=st.red===id?"#d32f2f":st.black===id?"#222":null;
+    e("circle",{cx:x,cy:y,r:7,fill:"none",stroke:ring||"#1f7a5a","stroke-width":ring?3.5:1.6,"stroke-dasharray":ring?"":"2 2","pointer-events":"none"});
+    if(id==="a"||id==="b")e("text",{x:x-11,y:y+5,"font-size":14,"font-weight":700,"font-style":"italic","font-family":"Georgia,serif",fill:"#c0392b","text-anchor":"end"}).textContent=id;
+    if(ring)e("text",{x:x+9,y:y+(r==="n2"?-10:16),"font-size":10,"font-weight":700,fill:ring}).textContent=st.red===id?"紅棒":"黑棒";
+    keyAct(hit,()=>clickNode(id));
+  });
+}
+function clickNode(id){
+  const t=R().type;
+  if(t==="A"){st._err="電流檔不可並聯在兩點之間，會形成短路！要量 330Ω 的電流，請點連接線上的 ✕，取下該線並把電表串聯進去。";update();return}
+  if(t==="off"){st._err="電表在 OFF 檔，請先轉到量測檔位。";update();return}
+  if(!st.red||(st.red&&st.black)){st.red=id;st.black=null}else if(id!==st.red){st.black=id}
+  update();
+}
+
+/* ---------- 數位電表 ---------- */
+const RANGES=[
+  {grp:"DCV 直流電壓"},
+  {id:"V2",type:"V",label:"2V",full:1.999,k:1,unit:"V",dec:3},{id:"V20",type:"V",label:"20V",full:19.99,k:1,unit:"V",dec:2},{id:"V200",type:"V",label:"200V",full:199.9,k:1,unit:"V",dec:1},
+  {grp:"DCA 直流電流"},
+  {id:"A2",type:"A",label:"2mA",full:1.999,k:1,unit:"mA",dec:3},{id:"A20",type:"A",label:"20mA",full:19.99,k:1,unit:"mA",dec:2},{id:"A200",type:"A",label:"200mA",full:199.9,k:1,unit:"mA",dec:1},
+  {grp:"Ω 電阻"},
+  {id:"R200",type:"ohm",label:"200Ω",full:199.9,k:1,unit:"Ω",dec:1},{id:"R2k",type:"ohm",label:"2kΩ",full:1.999,k:1e-3,unit:"kΩ",dec:3},{id:"R20k",type:"ohm",label:"20kΩ",full:19.99,k:1e-3,unit:"kΩ",dec:2},
+  {grp:""},{id:"OFF",type:"off",label:"OFF"}];
+const R=()=>RANGES.find(r=>r.id===st.range);
+function buildDial(){
+  const d=$("#dial");d.innerHTML="";
+  RANGES.forEach(r=>{
+    if(r.grp!==undefined){if(r.grp){const s=document.createElement("div");s.className="grp";s.textContent=r.grp;d.appendChild(s)}return}
+    const b=document.createElement("button");b.type="button";b.textContent=r.label;b.className=st.range===r.id?"on":"";b.setAttribute("aria-pressed",st.range===r.id);
+    b.addEventListener("click",()=>{const prev=R().type;st.range=r.id;if(prev!==r.type){st.red=st.black=null;if(r.type!=="A")st.brk=null}buildDial();update()});d.appendChild(b)});
+}
+function show(r,base){const v=base*r.k,a=Math.abs(v);if(!isFinite(v)||a>r.full+Math.pow(10,-r.dec)/2)return {ol:true,sign:"",digits:" 1."};
+  const s=a.toFixed(r.dec);return {ol:false,sign:v<0&&Number(s)!==0?"−":"",digits:s}}
+const srcTxt=()=>`左${st.e1?st.V1+"V":"短路"}、右${st.e2?st.V2+"V":"短路"}、${st.load?"接 330Ω":"330Ω 取出"}`;
+function reading(sol){
+  const r=R(),out={sign:"",digits:"",unit:r.unit||"",ol:false,msg:"",lvl:"",log:null};
+  if(r.type==="off"){out.msg="電表在 OFF 檔。";return out}
+  if(r.type==="A"){
+    if(!st.load){out.digits=(0).toFixed(r.dec);out.msg="330Ω 已取出，ab 之間開路，沒有負載電流。要驗證等效電路請先接回 330Ω。";out.lvl="warn";return out}
+    if(st.brk!=="L"){out.digits=(0).toFixed(r.dec);out.msg="電流檔須串聯：點 a 與 330Ω 之間連接線上的 ✕，取下該線並串入電表（紅棒接 a 點）。";return out}
+    const I=sol.IL*1000;Object.assign(out,show(r,I));
+    if(out.ol){out.msg=`超過 ${r.label} 檔！請立刻改用較大的電流檔。`;out.lvl="bad";return out}
+    out.log=`IL = ${out.sign}${out.digits} mA　[${srcTxt()}，DCA ${r.label}]`;
+    if(I<-1e-6)out.msg="讀值為負：電流實際上由 b 流向 a。",out.lvl="warn";
+    else if(r.id!=="A2"&&Math.abs(I)<r.full/10)out.msg="讀值偏小，可改用較小的電流檔提高解析度。",out.lvl="warn";
+    else out.msg=`330Ω 電流 IL = ${out.digits} mA（${srcTxt()}）`,out.lvl="ok";
+    return out;
+  }
+  if(!st.red||!st.black){Object.assign(out,r.type==="ohm"?{digits:" 1.",ol:true}:{digits:(0).toFixed(r.dec)});out.msg="點兩個量測點：第一下紅棒，第二下黑棒。";return out}
+  const pair=`${NN[st.red]}–${NN[st.black]}`;
+  if(r.type==="ohm"){
+    if(st.e1||st.e2){out.digits="Err";out.msg="電路上還有電池！量等效電阻前要把 9V 和 3V 都換成短路線（電壓源令為 0）。";out.lvl="bad";return out}
+    const Rx=rBetween(st.red,st.black);Object.assign(out,show(r,Rx));
+    if(out.ol){out.msg=`超過 ${r.label} 檔，請改用較大的電阻檔。`;out.lvl="warn";return out}
+    out.log=`R(${pair}) = ${out.digits} ${r.unit}　[${st.load?"接 330Ω":"330Ω 取出"}，${r.label}]`;
+    const ab=(st.red==="a"&&st.black==="b")||(st.red==="b"&&st.black==="a");
+    out.msg=ab&&st.load?`讀值 ${out.digits} ${r.unit}。注意：330Ω 還接在 ab 之間，量到的是 RTh 與 330Ω 並聯，要先取出 330Ω。`:`讀值 ${out.digits} ${r.unit}`;
+    out.lvl=ab&&st.load?"warn":"ok";return out;
+  }
+  const v=sol.V[st.red]-sol.V[st.black];Object.assign(out,show(r,v));
+  if(out.ol){out.msg=`超過 ${r.label} 檔，請改用較大的電壓檔。`;out.lvl="bad";return out}
+  out.log=`V(${pair}) = ${out.sign}${out.digits} V　[${srcTxt()}，DCV ${r.label}]`;
+  const ab=st.red==="a"&&st.black==="b";
+  out.msg=v<0?"讀值為負：黑棒端電位較高。":ab&&st.load?`讀值 ${out.digits} V。這是接上 330Ω 後的端電壓，不是開路電壓 ETh；量 ETh 要先取出 330Ω。`:`讀值 ${out.digits} V`;
+  out.lvl=v<0||(ab&&st.load)?"warn":"ok";return out;
+}
+
+/* ---------- 戴維寧等效電路（依學習單填的量測值） ---------- */
+function numIn(k){const e=$("#ws-"+k);if(!e||e.value==="")return null;const v=parseFloat(e.value);return isFinite(v)?v:null}
+function drawEq(){
+  const S=$("#eq");S.innerHTML="";
+  const w=d=>el("path",{d,class:"wire"},S);
+  const Rm=numIn("m1"),Em=numIn("m2"),RL=nominal.RL;
+  const T=40,Bt=170;
+  battV(S,70,T,Bt,true,Em==null?"？":Em,false);
+  el("text",{x:30,y:84,class:"rname","text-anchor":"middle"},S).textContent="ETh";
+  w(`M70,${T} L120,${T}`);
+  el("rect",{x:120,y:T-10,width:70,height:20,rx:3,fill:"var(--panel)",stroke:"var(--wire)","stroke-width":2.2},S);
+  w(`M190,${T} L250,${T}`);w(`M70,${Bt} L250,${Bt}`);
+  el("text",{x:155,y:T-18,class:"rname","text-anchor":"middle"},S).textContent="RTh = "+(Rm==null?"？":Rm+" Ω");
+  [[250,T,"a"],[250,Bt,"b"]].forEach(([x,y,t])=>{el("circle",{cx:x,cy:y,r:5,fill:"var(--panel)",stroke:"var(--wire)","stroke-width":2},S);
+    el("text",{x:x,y:y+(t==="a"?-12:26),class:"nodelbl","text-anchor":"middle"},S).textContent=t});
+  // 虛線接上 330Ω
+  el("path",{d:`M255,${T} L330,${T} L330,${(T+Bt)/2-30} M330,${(T+Bt)/2+30} L330,${Bt} L255,${Bt}`,fill:"none",stroke:"var(--muted)","stroke-width":1.6,"stroke-dasharray":"5 4"},S);
+  el("rect",{x:322,y:(T+Bt)/2-30,width:16,height:60,rx:3,fill:"none",stroke:"var(--muted)","stroke-width":1.8,"stroke-dasharray":"5 4"},S);
+  el("text",{x:346,y:(T+Bt)/2+5,class:"lbl"},S).textContent="RL "+ohmTxt(RL);
+  el("path",{d:`M285,${T-14} l26,0 m-6,-4 l6,4 l-6,4`,stroke:"var(--cur)","stroke-width":1.5,fill:"none"},S);
+  el("text",{x:298,y:T-20,class:"cur","text-anchor":"middle"},S).textContent="IL";
+  const n=$("#eqNote");
+  if(Rm==null||Em==null){n.innerHTML=`<div>在下方學習單填入步驟 3 的 <b>R<sub>Th</sub></b> 與步驟 4 的 <b>E<sub>Th</sub></b>，左圖會依你的量測值畫出戴維寧等效電路。</div><div class="hint">等效電路：E<sub>Th</sub> 串聯 R<sub>Th</sub>，a、b 為輸出端；E<sub>Th</sub> 的正端接 a（a 點電位較高）。</div>`;return}
+  const IL=Em/(Rm+RL)*1000,VL=Em*RL/(Rm+RL);
+  n.innerHTML=`<div>依你的量測值：E<sub>Th</sub> = <span class="big">${Em} V</span>，R<sub>Th</sub> = <span class="big">${Rm} Ω</span></div>
+  <div>接上 ${ohmTxt(RL)} 時，等效電路預測：</div>
+  <div class="big">I<sub>L</sub> = E<sub>Th</sub> ÷ (R<sub>Th</sub> + ${RL}) = ${IL.toFixed(2)} mA</div>
+  <div class="big">V<sub>L</sub> = ${VL.toFixed(3)} V</div>
+  <div class="hint">接回 330Ω，用電流檔量原電路的 I<sub>L</sub>，看是否相同（學習單「驗證」）。</div>`;
+}
+
+/* ---------- 更新 ---------- */
+function update(){
+  const sol=cur();
+  drawSch();drawBB();
+  const o=reading(sol),r=R();
+  if(st._err){o.msg=st._err;o.lvl="bad";st._err=null}else if(st._info){o.msg=st._info+" "+o.msg;st._info=null}
+  $("#aMode").textContent=r.type==="off"?"OFF":r.type==="ohm"?"Ω":r.type==="V"?"DC V":"DC mA";
+  $("#aRange").textContent=r.type==="off"?"":"RANGE "+r.label;
+  $("#aOL").className=o.ol?"":"dim";
+  $("#dSign").textContent=o.sign;$("#dVal").textContent=r.type==="off"?"":o.digits;$("#dUnit").textContent=r.type==="off"?"":o.unit;
+  const m=$("#msg");m.textContent=o.msg;m.className="msg "+(o.lvl||"");
+  [["e1Bat",st.e1],["e1Sh",!st.e1],["e2Bat",st.e2],["e2Sh",!st.e2],["ldOn",st.load],["ldOff",!st.load]].forEach(([id,on])=>{$("#"+id).classList.toggle("on",on);$("#"+id).setAttribute("aria-pressed",on)});
+  const Rt=rTh(actual),Et=eTh(actual,st.V1,st.V2),Ip=Et/(Rt+actual.RL),Ia=solve(actual,st.V1,st.V2,true).IL,sh=st.showSum;
+  $("#sR").textContent=sh?Rt.toFixed(1)+" Ω":"？";$("#sE").textContent=sh?Et.toFixed(3)+" V":"？";
+  $("#sP").textContent=sh?(Ip*1000).toFixed(2)+" mA":"？";$("#sI").textContent=sh?(Ia*1000).toFixed(2)+" mA":"？";
+  drawEq();
+  st._last=o;
+}
+
+/* ---------- 快速設定 ---------- */
+const QUICK=[
+  ["步驟 3：電源換短路線、取出 330Ω、量 Rab",{e1:false,e2:false,load:false,range:"R2k",brk:null,red:"a",black:"b"}],
+  ["步驟 4：接上兩電源、量開路電壓 Vab",{e1:true,e2:true,load:false,range:"V20",brk:null,red:"a",black:"b"}],
+  ["驗證：接回 330Ω、量 IL",{e1:true,e2:true,load:true,range:"A20",brk:"L",red:null,black:null}],
+  ["驗證：量 330Ω 端電壓",{e1:true,e2:true,load:true,range:"V2",brk:null,red:"a",black:"b"}],
+];
+QUICK.forEach(([lab,cfg])=>{const b=document.createElement("button");b.type="button";b.className="btn";b.textContent=lab;
+  b.addEventListener("click",()=>{Object.assign(st,cfg);buildDial();update()});$("#quick").appendChild(b)});
+
+/* ---------- 電阻設定 ---------- */
+function buildLegend(){
+  const seen=[...new Set(Object.values(nominal))].sort((a,b)=>a-b);
+  $("#ccLegend").innerHTML=seen.map((v,i)=>`<span>${i?"":"色碼："}${ohmTxt(v)} = ${ccName(v)}</span>`).join("")+`<span style="color:var(--short)">橘色線＝短路線</span>`;
+}
+function buildResSet(){
+  const box=$("#resSet");box.innerHTML="";
+  Object.keys(BOOK).forEach(k=>{
+    const lab=document.createElement("label");lab.className="hint";lab.htmlFor="rs-"+k;lab.textContent=k;
+    const s=document.createElement("select");s.id="rs-"+k;s.className="btn";
+    E12.forEach(v=>{const op=document.createElement("option");op.value=v;op.textContent=ohmTxt(v);if(v===nominal[k])op.selected=true;s.appendChild(op)});
+    s.addEventListener("change",()=>{nominal[k]=+s.value;resChanged(`${k} 已換成 ${ohmTxt(nominal[k])}（${ccName(nominal[k])}）。`)});
+    const w=document.createElement("span");w.className="row";w.style.gap="4px";w.append(lab,s);box.appendChild(w);
+  });
+  const b=document.createElement("button");b.type="button";b.className="btn";b.textContent="恢復課本電阻值";
+  b.addEventListener("click",()=>{Object.assign(nominal,BOOK);buildResSet();resChanged("已恢復課本的電阻值。")});
+  box.appendChild(b);
+}
+function resChanged(info){reroll();buildSheet();fillAns();buildLegend();st._info=info;update()}
+
+/* ---------- 學習單 ---------- */
+let SHEET;
+function makeSheet(){const n=nominal,o=ohmTxt;SHEET=[
+  {sec:"3. 9V、3V 換成短路線，取出 330Ω，Ω 檔量 ab 兩端"},
+  {k:"m1",label:"Rab = RTh =",unit:"Ω",type:"meas",exp:()=>rTh(actual)},
+  {sec:"4. 接上兩電壓源（330Ω 仍取出），DCV 檔量 ab 兩端"},
+  {k:"m2",label:"Vab = ETh =",unit:"V",type:"meas",exp:()=>eTh(actual,9,3)},
+  {sec:"5. 戴維寧等效電路圖：依上方 m1、m2 自動繪出（見「步驟 5」區塊）"},
+  {sec:"6. 以計算結果驗證量測之結果"},
+  {k:"c1",label:`(1) RTh = ${n.R1}×${n.R2}/(${n.R1}+${n.R2}) + ${n.R3}×${n.R4}/(${n.R3}+${n.R4})`,unit:"Ω",type:"calc",exp:()=>rTh(n)},
+  {k:"c2",label:`(2) ETh = 9 × ${n.R2}/(${n.R2}+${n.R1}) − ${n.R3}/(${n.R3}+${n.R4}) × 3`,unit:"V",type:"calc",exp:()=>eTh(n,9,3)},
+  {sec:"7. 回答問題"},
+  {k:"q1",label:"量測與計算值，兩者是否相近？",type:"yn"},
+  {sec:`驗證（補充）：接回 ${o(n.RL)}，比較等效電路與原電路`},
+  {k:"c3",label:`等效電路預測 IL = ETh ÷ (RTh + ${o(n.RL)})（用計算值）`,unit:"mA",type:"calc",exp:()=>eTh(n,9,3)/(rTh(n)+n.RL)*1000},
+  {k:"m3",label:`原電路實測：串入電表量 ${o(n.RL)} 的電流 IL =`,unit:"mA",type:"meas",exp:()=>solve(actual,9,3,true).IL*1000},
+  {k:"q2",label:"等效電路預測的 IL 與原電路實測是否相近？",type:"yn"}];}
+const KEY="ws5-sheet";let saved={};try{saved=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){}
+let showAns=false;
+function buildSheet(){
+  makeSheet();
+  const t=$("#sheet");t.innerHTML="<thead><tr><th>項目</th><th>填寫</th><th>單位</th><th>類別</th><th>結果</th></tr></thead>";
+  const tb=document.createElement("tbody");
+  SHEET.forEach(r=>{const tr=document.createElement("tr");
+    if(r.sec){tr.className="sec";tr.innerHTML=`<td colspan="5">${r.sec}</td>`;tb.appendChild(tr);return}
+    const inp=r.type==="yn"?`<select id="ws-${r.k}"><option value="">請圈選</option><option>是</option><option>否</option></select>`:`<input type="number" step="any" inputmode="decimal" id="ws-${r.k}" aria-label="${r.label}">`;
+    tr.innerHTML=`<td>${r.label}</td><td>${inp}</td><td class="mono">${r.unit||""}</td><td class="hint">${r.type==="meas"?"量測值":r.type==="calc"?"計算值":"判斷"}</td><td><span class="mark" id="mk-${r.k}"></span> <span class="ans" id="an-${r.k}" ${showAns?"":"hidden"}></span></td>`;
+    tb.appendChild(tr)});
+  t.appendChild(tb);
+  SHEET.forEach(r=>{if(!r.k)return;const e=$("#ws-"+r.k);if(saved[r.k]!=null)e.value=saved[r.k];
+    e.addEventListener("input",()=>{saved[r.k]=e.value;try{localStorage.setItem(KEY,JSON.stringify(saved))}catch(err){}if(r.k==="m1"||r.k==="m2")drawEq()})});
+}
+function fillAns(){
+  SHEET.forEach(r=>{if(!r.k)return;const a=$("#an-"+r.k);
+    if(r.exp)a.textContent="參考 "+r.exp().toFixed(r.unit==="Ω"?1:r.unit==="V"?3:2);
+    else a.textContent={q1:"參考 是（電阻有 ±5% 誤差，略有差異屬正常）",q2:"參考 是（戴維寧等效電路對外部負載完全等效）"}[r.k]||""})}
+function check(){
+  SHEET.forEach(r=>{if(!r.k||!r.exp)return;const e=$("#ws-"+r.k),mk=$("#mk-"+r.k);
+    if(e.value===""){mk.textContent="";mk.className="mark";return}
+    const v=parseFloat(e.value),x=r.exp(),ok=Math.abs(v-x)<=Math.max(Math.abs(x)*(r.type==="meas"?0.03:0.02),0.005);
+    mk.textContent=ok?"✓ 正確":"✗ 再檢查";mk.className="mark "+(ok?"ok":"bad")});
+}
+
+/* ---------- 事件 ---------- */
+function setView(v){$("#schBox").hidden=v!=="sch";$("#bbBox").hidden=v!=="bb";
+  $("#tabSch").classList.toggle("on",v==="sch");$("#tabBB").classList.toggle("on",v==="bb");
+  $("#tabSch").setAttribute("aria-selected",v==="sch");$("#tabBB").setAttribute("aria-selected",v==="bb")}
+$("#tabSch").addEventListener("click",()=>setView("sch"));$("#tabBB").addEventListener("click",()=>setView("bb"));
+$("#e1Bat").addEventListener("click",()=>{st.e1=true;update()});$("#e1Sh").addEventListener("click",()=>{st.e1=false;update()});
+$("#e2Bat").addEventListener("click",()=>{st.e2=true;update()});$("#e2Sh").addEventListener("click",()=>{st.e2=false;update()});
+$("#ldOn").addEventListener("click",()=>{st.load=true;update()});$("#ldOff").addEventListener("click",()=>{st.load=false;if(st.brk==="L")st.brk=null;update()});
+const clampV=v=>Math.max(0,Math.min(30,isNaN(v)?0:Math.round(v*10)/10));
+$("#e1V").addEventListener("change",e=>{st.V1=clampV(parseFloat(e.target.value));e.target.value=st.V1;update()});
+$("#e2V").addEventListener("change",e=>{st.V2=clampV(parseFloat(e.target.value));e.target.value=st.V2;update()});
+$("#showSum").addEventListener("change",e=>{st.showSum=e.target.checked;update()});
+$("#tolChk").addEventListener("change",e=>{st.tol=e.target.checked;reroll();fillAns();update()});
+$("#reroll").addEventListener("click",()=>{reroll();fillAns();st._info=st.tol?"已換上同標稱值的另一組電阻（實際值在 ±5% 內不同），請重新量測。":"目前使用理想電阻，勾選「±5% 誤差」後換組才會有差異。";update()});
+$("#clearProbe").addEventListener("click",()=>{st.red=st.black=null;st.brk=null;update()});
+$("#logBtn").addEventListener("click",()=>{const o=st._last;if(!o||!o.log){$("#msg").textContent="目前沒有有效讀值可記錄。";$("#msg").className="msg warn";return}
+  const li=document.createElement("li");li.textContent=o.log;$("#log").prepend(li)});
+$("#checkBtn").addEventListener("click",check);
+$("#ansBtn").addEventListener("click",()=>{showAns=!showAns;$("#ansBtn").textContent=showAns?"隱藏參考答案":"顯示參考答案";document.querySelectorAll(".ans").forEach(a=>a.hidden=!showAns)});
+let armed=false;
+$("#resetBtn").addEventListener("click",()=>{
+  if(!armed){armed=true;$("#resetBtn").textContent="再按一次確認清空";setTimeout(()=>{armed=false;$("#resetBtn").textContent="清空紀錄"},3000);return}
+  armed=false;$("#resetBtn").textContent="清空紀錄";saved={};try{localStorage.removeItem(KEY)}catch(e){}
+  SHEET.forEach(r=>{if(r.k){$("#ws-"+r.k).value="";$("#mk-"+r.k).textContent=""}});$("#log").innerHTML="";drawEq()});
+
+buildDial();buildResSet();buildLegend();buildSheet();fillAns();update();
+})();
+</script>
+
+</html>
