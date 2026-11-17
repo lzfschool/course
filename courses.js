@@ -42,7 +42,7 @@ window.COURSES = [
           {
             title: "3-5 最大功率轉移定理",
             items: [
-              { no: "工作項目 7", title: "製作功率消耗曲線圖", desc: "" },
+              { no: "工作項目 7", title: "製作功率消耗曲線圖", desc: "更換負載量 VL、算 PL，畫出功率曲線，驗證 RL = RS 時功率最大。", href: "basic-electricity-lab/ch3-item7.html" },
               { no: "工作項目 8", title: "量測等效電壓與電阻值，並計算最大功率值", desc: "" }
             ]
           }
