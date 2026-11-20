@@ -611,26 +611,56 @@ buildDial();buildResSet();buildLegend();buildSheet();fillAns();update();
 })();
 </script>
 <script>
-/* 參考答案密碼保護：未解鎖時，按「顯示參考答案」會先要求輸入教師密碼（同一分頁解鎖一次即可） */
+/* 參考答案密碼保護
+   - 密碼不以明文存放：只存「加鹽 PBKDF2-SHA256（1,000,000 次）」的雜湊值，無法反推密碼
+   - 每次驗證約需 0.2～0.5 秒，連錯 5 次需等 30 秒，降低猜密碼的速度
+   - 未解鎖前，參考答案的文字不會留在網頁元素中
+   - 解鎖狀態只保留在目前分頁，關閉分頁即失效 */
 (()=>{
-const H="b89d2712",KEY="ans-unlocked";
-const h=s=>{let x=0x811c9dc5;for(const c of s){x^=c.codePointAt(0);x=Math.imul(x,0x01000193)>>>0}return x.toString(16)};
-let ok=false;try{ok=sessionStorage.getItem(KEY)===H}catch(e){}
+const SALT="7c328925d5345127c62f82e1555e3762",ITER=1000000,HASH="8af8779b8313f4456fce0549f52445ac909b92c8bfb2b09393a6b2ff871dae26",KEY="ans-pass";
 const btn=document.getElementById("ansBtn");if(!btn)return;
+const hex2buf=h=>new Uint8Array(h.match(/../g).map(x=>parseInt(x,16)));
+async function derive(pw){
+  const k=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveBits"]);
+  const b=await crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:hex2buf(SALT),iterations:ITER},k,256);
+  return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("");
+}
+const same=(a,b)=>{if(a.length!==b.length)return false;let d=0;for(let i=0;i<a.length;i++)d|=a.charCodeAt(i)^b.charCodeAt(i);return d===0};
+let ok=false;
+// 未解鎖時，把參考答案文字移出網頁元素，暫存在程式內
+const stash=new WeakMap();let busy=false;
+function hideAns(){if(ok)return;busy=true;document.querySelectorAll(".ans").forEach(a=>{if(a.textContent){stash.set(a,a.textContent);a.textContent=""}});busy=false}
+function restoreAns(){document.querySelectorAll(".ans").forEach(a=>{if(stash.has(a)&&!a.textContent)a.textContent=stash.get(a)})}
+hideAns();
+new MutationObserver(()=>{if(!busy&&!ok)hideAns()}).observe(document.body,{subtree:true,childList:true,characterData:true});
+// 密碼輸入框
 const box=document.createElement("span");box.className="row";box.hidden=true;box.style.gap="6px";
-box.innerHTML='<input type="password" inputmode="numeric" autocomplete="off" placeholder="教師密碼" aria-label="參考答案密碼" style="width:8em;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);font:inherit"><button class="btn" type="button">確定</button><span class="hint" role="status" style="color:var(--bad)"></span>';
+box.innerHTML='<input type="password" inputmode="numeric" autocomplete="off" placeholder="教師密碼" aria-label="參考答案密碼" style="width:8em;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);font:inherit"><button class="btn" type="button">確定</button><span class="hint" role="status"></span>';
 btn.insertAdjacentElement("afterend",box);
 const inp=box.querySelector("input"),go=box.querySelector("button"),tip=box.querySelector("[role=status]");
+const say=(t,bad)=>{tip.textContent=t;tip.style.color=bad?"var(--bad)":""};
 document.addEventListener("click",e=>{
   if(e.target!==btn||ok||!btn.textContent.includes("顯示"))return;
   e.stopImmediatePropagation();e.preventDefault();
-  box.hidden=!box.hidden;tip.textContent="";if(!box.hidden)inp.focus();
+  box.hidden=!box.hidden;say("");if(!box.hidden)inp.focus();
 },true);
-const tryIt=()=>{
-  if(h(inp.value.trim())===H){ok=true;try{sessionStorage.setItem(KEY,H)}catch(e){}box.hidden=true;inp.value="";tip.textContent="";btn.click()}
-  else{tip.textContent="密碼錯誤";inp.select()}
-};
+function unlock(pw){ok=true;restoreAns();try{sessionStorage.setItem(KEY,pw)}catch(e){}}
+let fails=0,until=0,checking=false;
+async function tryIt(){
+  if(checking)return;
+  if(!(window.crypto&&crypto.subtle)){say("此瀏覽器不支援安全驗證，請以 https 網址開啟。",true);return}
+  const now=Date.now();if(now<until){say(`請等 ${Math.ceil((until-now)/1000)} 秒再試。`,true);return}
+  const pw=inp.value.trim();if(!pw)return;
+  checking=true;go.disabled=true;say("驗證中…");
+  let good=false;try{good=same(await derive(pw),HASH)}catch(e){}
+  checking=false;go.disabled=false;
+  if(good){fails=0;unlock(pw);box.hidden=true;inp.value="";say("");btn.click()}
+  else{fails++;inp.select();if(fails>=5){until=Date.now()+30000;fails=0;say("密碼錯誤次數過多，請 30 秒後再試。",true)}else say("密碼錯誤",true)}
+}
 go.addEventListener("click",tryIt);inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();tryIt()}});
+// 同一分頁已解鎖過：重新驗證後自動解鎖
+let saved=null;try{saved=sessionStorage.getItem(KEY)}catch(e){}
+if(saved&&window.crypto&&crypto.subtle)derive(saved).then(h=>{if(same(h,HASH))unlock(saved);else try{sessionStorage.removeItem(KEY)}catch(e){}}).catch(()=>{});
 })();
 </script>
 
