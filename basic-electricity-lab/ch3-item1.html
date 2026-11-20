@@ -665,5 +665,29 @@ $("#resetBtn").addEventListener("click",()=>{
 reroll();buildDial();buildSheet();fillAns();buildResSet();buildLegend();update();
 })();
 </script>
+<script>
+/* 參考答案密碼保護：未解鎖時，按「顯示參考答案」會先要求輸入教師密碼（同一分頁解鎖一次即可） */
+(()=>{
+const H="b89d2712",KEY="ans-unlocked";
+const h=s=>{let x=0x811c9dc5;for(const c of s){x^=c.codePointAt(0);x=Math.imul(x,0x01000193)>>>0}return x.toString(16)};
+let ok=false;try{ok=sessionStorage.getItem(KEY)===H}catch(e){}
+const btn=document.getElementById("ansBtn");if(!btn)return;
+const box=document.createElement("span");box.className="row";box.hidden=true;box.style.gap="6px";
+box.innerHTML='<input type="password" inputmode="numeric" autocomplete="off" placeholder="教師密碼" aria-label="參考答案密碼" style="width:8em;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);font:inherit"><button class="btn" type="button">確定</button><span class="hint" role="status" style="color:var(--bad)"></span>';
+btn.insertAdjacentElement("afterend",box);
+const inp=box.querySelector("input"),go=box.querySelector("button"),tip=box.querySelector("[role=status]");
+document.addEventListener("click",e=>{
+  if(e.target!==btn||ok||!btn.textContent.includes("顯示"))return;
+  e.stopImmediatePropagation();e.preventDefault();
+  box.hidden=!box.hidden;tip.textContent="";if(!box.hidden)inp.focus();
+},true);
+const tryIt=()=>{
+  if(h(inp.value.trim())===H){ok=true;try{sessionStorage.setItem(KEY,H)}catch(e){}box.hidden=true;inp.value="";tip.textContent="";btn.click()}
+  else{tip.textContent="密碼錯誤";inp.select()}
+};
+go.addEventListener("click",tryIt);inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();tryIt()}});
+})();
+</script>
+
 
 </html>
