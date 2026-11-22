@@ -600,6 +600,17 @@ $("#resetBtn").addEventListener("click",()=>{
   SHEET.forEach(r=>{if(r.k){$("#ws-"+r.k).value="";$("#mk-"+r.k).textContent=""}});$("#log").innerHTML="";fillAns();drawPlot()});
 
 st.range="V20";st.red="a";st.black="b";
+/* 參考答案計算過程 */
+const F_=(v,d=2)=>(+v).toFixed(d),P_=(a,b)=>a*b/(a+b);
+const HOW_={
+  q1r:()=>`PL = E²RL÷(RS+RL)²，RL = RS = ${nominal.RS}Ω 時最大`,
+  q2p:()=>{const RS=nominal.RS;return `225÷(4×${RS}) = ${F_(225/(4*RS),4)}W = ${F_(225/(4*RS)*1000,1)}mW`}};
+LOADS.forEach(v=>{
+  HOW_["v"+v]=()=>{const RS=nominal.RS;return `15×${v}÷(${RS}+${v}) = ${F_(15*v/(RS+v),3)}V`};
+  HOW_["p"+v]=()=>{const V=numIn("v"+v)??15*v/(nominal.RS+v);return `${F_(V,3)}²÷${v} = ${F_(V*V/v*1000,1)}mW`}});
+const _fillAns=fillAns;
+fillAns=function(){_fillAns();SHEET.forEach(r=>{if(!r.k||!HOW_[r.k])return;const a=document.getElementById("an-"+r.k);if(!a)return;
+  let t="";try{t=HOW_[r.k]()}catch(e){}if(t)a.textContent+=(a.textContent?"　｜ 計算：":"計算：")+t})};
 buildDial();buildResSet();buildLegend();buildSheet();fillAns();update();
 })();
 </script>

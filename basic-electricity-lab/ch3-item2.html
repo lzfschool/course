@@ -488,6 +488,18 @@ $("#resetBtn").addEventListener("click",()=>{
   SHEET.forEach(r=>{if(r.k){$("#ws-"+r.k).value="";$("#mk-"+r.k).textContent=""}});$("#log").innerHTML="";
 });
 
+/* 參考答案計算過程 */
+const F_=(v,d=2)=>(+v).toFixed(d),P_=(a,b)=>a*b/(a+b);
+const HOW_={
+  jRT:()=>{const s=stages(nominal);return `RT 一定大於 R3（${nominal.R3}Ω），後面並聯部分小於 R6（${nominal.R6}Ω）；計算值 ${F_(s.s5,3)}Ω`},
+  c1:()=>{const n=nominal,s=stages(n);return `${n.R1}+${n.R4} = ${F_(s.s1,3)}Ω`},
+  c2:()=>{const n=nominal,s=stages(n);return `${n.R5}×${F_(s.s1,3)}÷(${n.R5}+${F_(s.s1,3)}) = ${F_(s.s2,3)}Ω`},
+  c3:()=>{const n=nominal,s=stages(n);return `R2+上式 = ${n.R2}+${F_(s.s2,3)} = ${F_(s.s3,3)}Ω；${n.R6}×${F_(s.s3,3)}÷(${n.R6}+${F_(s.s3,3)}) = ${F_(s.s4,3)}Ω`},
+  c4:()=>{const n=nominal,s=stages(n);return `${n.R3}+${F_(s.s4,3)} = ${F_(s.s5,3)}Ω`},
+  mRT:()=>`理論值 ${F_(stages(nominal).s5,3)}Ω（未短接歸零會多約 0.3Ω）`};
+const _fillAns=fillAns;
+fillAns=function(){_fillAns();SHEET.forEach(r=>{if(!r.k||!HOW_[r.k])return;const a=document.getElementById("an-"+r.k);if(!a)return;
+  let t="";try{t=HOW_[r.k]()}catch(e){}if(t)a.textContent+=(a.textContent?"　｜ 計算：":"計算：")+t})};
 reroll();buildDial();buildResSet();buildLegend();buildSheet();fillAns();update();
 })();
 </script>

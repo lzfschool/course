@@ -692,6 +692,26 @@ $("#resetBtn").addEventListener("click",()=>{
   armed=false;$("#resetBtn").textContent="清空紀錄";saved={};try{localStorage.removeItem(KEY)}catch(e){}
   SHEET.forEach(r=>{if(r.k){$("#ws-"+r.k).value="";$("#mk-"+r.k).textContent=""}});$("#log").innerHTML="";drawEq()});
 
+/* 參考答案計算過程 */
+const F_=(v,d=2)=>(+v).toFixed(d),P_=(a,b)=>a*b/(a+b);
+const T6_=()=>{const n=nominal,Rr=P_(n.R3,n.R4),Rl=P_(n.R1,n.R2),pa=P_(Rr,n.R2),pb=P_(Rl,n.R3),Va=9*pa/(n.R1+pa),Vb=3*pb/(n.R4+pb);
+  return {n,Rr,Rl,pa,pb,Va,Vb,I1:Va/Rr*1000,I2:Vb/Rl*1000,R:Rr+Rl}};
+const HOW_={
+  m1:()=>{const t=T6_();return `理論值 R1//R2 + R3//R4 = ${F_(t.Rl,1)}+${F_(t.Rr,1)} = ${F_(t.R,1)}Ω`},
+  c1:()=>{const t=T6_();return `${F_(t.Rl,1)}+${F_(t.Rr,1)} = ${F_(t.R,1)}Ω`},
+  m2:()=>{const t=T6_();return `理論值 IN1−IN2 = ${F_(t.I1)}−${F_(t.I2)} = ${F_(t.I1-t.I2)}mA`},
+  c2:()=>{const t=T6_();return `9×${F_(t.pa)}÷(${t.n.R1}+${F_(t.pa)}) = ${F_(t.Va,3)}V`},
+  c3:()=>{const t=T6_();return `${F_(t.Va,3)}÷${F_(t.Rr,1)} = ${F_(t.I1)}mA`},
+  c4:()=>{const t=T6_();return `3×${F_(t.pb)}÷(${t.n.R4}+${F_(t.pb)}) = ${F_(t.Vb,3)}V`},
+  c5:()=>{const t=T6_();return `${F_(t.Vb,3)}÷${F_(t.Rl,1)} = ${F_(t.I2)}mA（課本寫 ÷6，應為 ÷60）`},
+  c6:()=>{const t=T6_();return `${F_(t.I1)}−${F_(t.I2)} = ${F_(t.I1-t.I2)}mA`},
+  m3:()=>`理論值 ${F_(T6_().I1)}mA`,
+  m4:()=>`理論值 ${F_(T6_().I2)}mA（電表顯示負值）`,
+  c7:()=>{const t=T6_(),I=t.I1-t.I2;return `${F_(I)}×${F_(t.R,1)}÷(${F_(t.R,1)}+${t.n.RL}) = ${F_(I*t.R/(t.R+t.n.RL))}mA`},
+  m5:()=>{const t=T6_(),I=t.I1-t.I2;return `理論值 ${F_(I*t.R/(t.R+t.n.RL))}mA`}};
+const _fillAns=fillAns;
+fillAns=function(){_fillAns();SHEET.forEach(r=>{if(!r.k||!HOW_[r.k])return;const a=document.getElementById("an-"+r.k);if(!a)return;
+  let t="";try{t=HOW_[r.k]()}catch(e){}if(t)a.textContent+=(a.textContent?"　｜ 計算：":"計算：")+t})};
 buildDial();buildResSet();buildLegend();buildSheet();fillAns();update();
 })();
 </script>

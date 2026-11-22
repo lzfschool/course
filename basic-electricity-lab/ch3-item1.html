@@ -662,6 +662,26 @@ $("#resetBtn").addEventListener("click",()=>{
   SHEET.forEach(r=>{if(r.k){$("#ws-"+r.k).value="";$("#mk-"+r.k).textContent=""}});$("#log").innerHTML="";
 });
 
+/* 參考答案計算過程 */
+const F_=(v,d=2)=>(+v).toFixed(d),P_=(a,b)=>a*b/(a+b);
+const HOW_={
+  cR1:()=>{const n=nominal,F=idealF();return `${n.Rp1}×${n.Rp2}÷(${n.Rp1}+${n.Rp2}) = ${F_(F.Req1)}Ω`},
+  cR2:()=>{const n=nominal,F=idealF();return `${n.R3}+${n.R4} = ${F_(F.Req2,0)}Ω`},
+  cRab:()=>{const F=idealF();return `R1×R2÷(R1+R2) = ${F_(F.Req1)}×${F_(F.Req2,0)}÷(${F_(F.Req1)}+${F_(F.Req2,0)}) = ${F_(F.Rab)}Ω`},
+  cRT:()=>{const F=idealF();return `Rs+Rab = ${nominal.Rs}+${F_(F.Rab)} = ${F_(F.RT)}Ω`},
+  mRab:()=>`理論值 R1//R2 = ${F_(idealF().Rab)}Ω（實際電阻有 ±5% 誤差）`,
+  mRT:()=>`理論值 Rs+Rab = ${F_(idealF().RT)}Ω`,
+  mI:()=>{const F=idealF();return `I = E÷RT = ${VS}÷${F_(F.RT)} = ${F_(F.I*1000)}mA`},
+  mI1:()=>{const F=idealF();return `Vab = I×Rab = ${F_(F.Vab,3)}V；I1 = Vab÷R1 = ${F_(F.Vab,3)}÷${F_(F.Req1)} = ${F_(F.I1*1000)}mA`},
+  mI2:()=>{const F=idealF();return `I2 = Vab÷R2 = ${F_(F.Vab,3)}÷${F_(F.Req2,0)} = ${F_(F.I2*1000,3)}mA`},
+  q2:()=>{const F=idealF();return `${F_(F.I1*1000)} + ${F_(F.I2*1000)} = ${F_(F.I*1000)}mA`},
+  mVab:()=>{const F=idealF();return `理論值 I×Rab = ${F_(F.I*1000)}mA×${F_(F.Rab)}Ω = ${F_(F.Vab,3)}V`},
+  mVcb:()=>{const F=idealF();return `理論值 I2×R4 = ${F_(F.I2*1000,3)}mA×${nominal.R4}Ω = ${F_(F.Vcb,3)}V`},
+  cVab:()=>{const F=idealF();return `I1×R1 = ${F_(F.I1*1000)}mA×${F_(F.Req1)}Ω = ${F_(F.Vab,3)}V`},
+  cVcb:()=>{const F=idealF();return `I2×R4 = ${F_(F.I2*1000,3)}mA×${nominal.R4}Ω = ${F_(F.Vcb,3)}V`}};
+const _fillAns=fillAns;
+fillAns=function(){_fillAns();SHEET.forEach(r=>{if(!r.k||!HOW_[r.k])return;const a=document.getElementById("an-"+r.k);if(!a)return;
+  let t="";try{t=HOW_[r.k]()}catch(e){}if(t)a.textContent+=(a.textContent?"　｜ 計算：":"計算：")+t})};
 reroll();buildDial();buildSheet();fillAns();buildResSet();buildLegend();update();
 })();
 </script>

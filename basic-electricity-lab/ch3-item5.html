@@ -655,6 +655,19 @@ $("#resetBtn").addEventListener("click",()=>{
   armed=false;$("#resetBtn").textContent="清空紀錄";saved={};try{localStorage.removeItem(KEY)}catch(e){}
   SHEET.forEach(r=>{if(r.k){$("#ws-"+r.k).value="";$("#mk-"+r.k).textContent=""}});$("#log").innerHTML="";drawEq()});
 
+/* 參考答案計算過程 */
+const F_=(v,d=2)=>(+v).toFixed(d),P_=(a,b)=>a*b/(a+b);
+const T5_=()=>{const n=nominal,a=n.R1*n.R2/(n.R1+n.R2),b=n.R3*n.R4/(n.R3+n.R4),Va=9*n.R2/(n.R1+n.R2),Vb=3*n.R3/(n.R3+n.R4);return {n,a,b,Va,Vb,R:a+b,E:Va-Vb}};
+const HOW_={
+  m1:()=>{const t=T5_();return `理論值 R1//R2 + R3//R4 = ${F_(t.a,1)}+${F_(t.b,1)} = ${F_(t.R,1)}Ω`},
+  m2:()=>{const t=T5_();return `理論值 Va−Vb = ${F_(t.Va,3)}−${F_(t.Vb,3)} = ${F_(t.E,3)}V`},
+  c1:()=>{const t=T5_(),n=t.n;return `${n.R1}×${n.R2}÷${n.R1+n.R2} + ${n.R3}×${n.R4}÷${n.R3+n.R4} = ${F_(t.a,1)}+${F_(t.b,1)} = ${F_(t.R,1)}Ω`},
+  c2:()=>{const t=T5_(),n=t.n;return `Va = 9×${n.R2}÷${n.R1+n.R2} = ${F_(t.Va,3)}V；Vb = 3×${n.R3}÷${n.R3+n.R4} = ${F_(t.Vb,3)}V；ETh = ${F_(t.E,3)}V`},
+  c3:()=>{const t=T5_();return `${F_(t.E,3)}÷(${F_(t.R,1)}+${t.n.RL}) = ${F_(t.E/(t.R+t.n.RL)*1000)}mA`},
+  m3:()=>{const t=T5_();return `理論值與等效電路預測相同 ${F_(t.E/(t.R+t.n.RL)*1000)}mA`}};
+const _fillAns=fillAns;
+fillAns=function(){_fillAns();SHEET.forEach(r=>{if(!r.k||!HOW_[r.k])return;const a=document.getElementById("an-"+r.k);if(!a)return;
+  let t="";try{t=HOW_[r.k]()}catch(e){}if(t)a.textContent+=(a.textContent?"　｜ 計算：":"計算：")+t})};
 buildDial();buildResSet();buildLegend();buildSheet();fillAns();update();
 })();
 </script>

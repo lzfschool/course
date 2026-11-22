@@ -607,6 +607,20 @@ $("#resetBtn").addEventListener("click",()=>{
   armed=false;$("#resetBtn").textContent="清空紀錄";saved={};try{localStorage.removeItem(KEY)}catch(e){}
   SHEET.forEach(r=>{if(r.k){$("#ws-"+r.k).value="";$("#mk-"+r.k).textContent=""}});$("#log").innerHTML=""});
 
+/* 參考答案計算過程 */
+const F_=(v,d=2)=>(+v).toFixed(d),P_=(a,b)=>a*b/(a+b);
+const HOW_={
+  c1:()=>{const n=nominal;return `9 + (${n.R2}+${n.R3})Ω×10mA = 9 + ${F_((n.R2+n.R3)*0.01)} = ${F_(9+(n.R2+n.R3)*0.01)}V`},
+  c2:()=>{const n=nominal,v=9+(n.R2+n.R3)*0.01;return `${F_(v)}÷${n.R4} = ${F_(v/n.R4*1000)}mA`},
+  c3:()=>{const n=nominal,v=9+(n.R2+n.R3)*0.01;return `10 + ${F_(v/n.R4*1000)} = ${F_(10+v/n.R4*1000)}mA`},
+  c4:()=>{const n=nominal,v=9+(n.R2+n.R3)*0.01,I=0.01+v/n.R4;return `Vab + I×R1 = ${F_(v)} + ${F_(I*1000)}mA×${n.R1}Ω = ${F_(v+I*n.R1)}V（課本寫「−」，應為「+」）`},
+  m1:()=>{const n=nominal,p=P_(n.R1,n.R4),v=9*p/(n.R2+n.R3+p);return `左電源短路：R1//R4 = ${F_(p)}Ω；Vab = 9×${F_(p)}÷(${n.R2+n.R3}+${F_(p)}) = ${F_(v,3)}V；I1 = Vab÷${n.R4} = ${F_(v/n.R4*1000)}mA`},
+  m2:()=>{const n=nominal,p=P_(n.R2+n.R3,n.R4),v=9*p/(n.R1+p);return `中間電源短路：(R2+R3)//R4 = ${F_(p)}Ω；Vab = 9×${F_(p)}÷(${n.R1}+${F_(p)}) = ${F_(v,3)}V；I2 = Vab÷${n.R4} = ${F_(v/n.R4*1000)}mA`},
+  c5:()=>{const n=nominal,a=solve(nominal,0,9).IR*1000,b=solve(nominal,9,0).IR*1000;return `${F_(a)} + ${F_(b)} = ${F_(a+b)}mA`},
+  m3:()=>{const n=nominal,s=solve(nominal,9,9);return `Vab = (9/${n.R1}+9/${n.R2+n.R3})÷(1/${n.R1}+1/${n.R2+n.R3}+1/${n.R4}) = ${F_(s.Va,3)}V；÷${n.R4} = ${F_(s.IR*1000)}mA`}};
+const _fillAns=fillAns;
+fillAns=function(){_fillAns();SHEET.forEach(r=>{if(!r.k||!HOW_[r.k])return;const a=document.getElementById("an-"+r.k);if(!a)return;
+  let t="";try{t=HOW_[r.k]()}catch(e){}if(t)a.textContent+=(a.textContent?"　｜ 計算：":"計算：")+t})};
 buildDial();buildResSet();buildLegend();buildSheet();fillAns();update();
 })();
 </script>

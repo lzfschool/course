@@ -680,6 +680,21 @@ $("#resetBtn").addEventListener("click",()=>{
   SHEET.forEach(r=>{if(r.k){$("#ws-"+r.k).value="";$("#mk-"+r.k).textContent=""}});$("#log").innerHTML="";fillAns();drawEq()});
 
 st.e1=false;st.e2=false;
+/* 參考答案計算過程 */
+const F_=(v,d=2)=>(+v).toFixed(d),P_=(a,b)=>a*b/(a+b);
+const T8_=()=>{const n=nominal,R=P_(n.R1,n.R2),E=(9/n.R1+9/n.R2)*R;return {n,R,E,Pm:E*E/(4*R)}};
+const HOW_={
+  m1:()=>{const t=T8_();return `理論值 ${t.n.R1}×${t.n.R2}÷(${t.n.R1}+${t.n.R2}) = ${F_(t.R,1)}Ω`},
+  m2:()=>{const t=T8_();return `理論值 ${F_(t.E,3)}V`},
+  c0:()=>{const R=numIn("m1")??T8_().R,E=numIn("m2")??T8_().E;return `${E}²÷(4×${R}) = ${F_(E*E/(4*R),4)}W`},
+  c1:()=>{const t=T8_();return `${t.n.R1}×${t.n.R2}÷${t.n.R1+t.n.R2} = ${F_(t.R,1)}Ω`},
+  c2:()=>{const t=T8_();return `(9/${t.n.R1}+9/${t.n.R2})×${F_(t.R,1)} = ${F_(9/t.n.R1+9/t.n.R2,4)}×${F_(t.R,1)} = ${F_(t.E,3)}V`},
+  c3:()=>{const t=T8_();return `${F_(t.E,3)}²÷(4×${F_(t.R,1)}) = ${F_(t.Pm,4)}W`},
+  m3:()=>{const t=T8_(),RL=Math.round(t.R);return `理論值 ${F_(t.E,3)}×${RL}÷(${F_(t.R,1)}+${RL}) = ${F_(t.E*RL/(t.R+RL),3)}V`},
+  c4:()=>{const t=T8_(),RL=Math.round(t.R),V=numIn("m3")??t.E*RL/(t.R+RL);return `${F_(V,3)}²÷${RL} = ${F_(V*V/RL,4)}W`}};
+const _fillAns=fillAns;
+fillAns=function(){_fillAns();SHEET.forEach(r=>{if(!r.k||!HOW_[r.k])return;const a=document.getElementById("an-"+r.k);if(!a)return;
+  let t="";try{t=HOW_[r.k]()}catch(e){}if(t)a.textContent+=(a.textContent?"　｜ 計算：":"計算：")+t})};
 buildDial();buildResSet();buildLegend();buildSheet();fillAns();drawEq();update();
 })();
 </script>
