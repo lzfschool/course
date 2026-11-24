@@ -549,6 +549,9 @@ QUICK.forEach(([lab,cfg])=>{const b=document.createElement("button");b.type="but
 function buildLegend(){
   const seen=[...new Set(Object.values(nominal))].sort((a,b)=>a-b);
   $("#ccLegend").innerHTML=seen.map((v,i)=>`<span>${i?"":"色碼："}${ohmTxt(v)} = ${ccName(v)}</span>`).join("")+`<span style="color:var(--short)">橘色線＝短路線</span>`;
+  {const n=nominal,o=ohmTxt,s=document.createElement("span");s.style.flexBasis="100%";s.style.color="var(--ink)";
+    s.textContent=`電路說明：a、b 之間並接三條支路。左支路：電源 V（c、d 端）串 ${o(n.R1)}；中間支路：${o(n.R2)}、9V 電源、${o(n.R3)} 串聯（圖中 10mA 是第 1 項計算時假設的電流）；右支路：${o(n.R4)}，流過它的電流就是要量的 I₁。重疊定理：把一個電源換成短路線、只留另一個電源，分別量出 ${o(n.R4)} 的電流，兩者相加（含正負號）就等於兩電源同時作用時的電流。`;
+    $("#ccLegend").appendChild(s)}
 }
 function buildResSet(){
   const box=$("#resSet");box.innerHTML="";
