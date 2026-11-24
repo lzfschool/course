@@ -108,7 +108,7 @@ footer{font-size:12.5px;color:var(--muted)}
     <a href="../index.html?course=basic-electricity-lab&amp;ch=3" style="display:inline-block;font-size:13px;color:var(--accent);text-decoration:none;margin-bottom:4px">← 回實習目錄</a>
     <div class="eyebrow">基本電學實習 第 3 章 · 3-2 惠斯登電橋</div>
     <h1>工作項目 3：惠斯登電橋之平衡條件求未知電阻</h1>
-    <p class="sub">9V 電源經 R1（6.8kΩ）送到 a 點；上臂 R2、R3，下臂 R4、VR，c、d 之間接兩顆方向相反的 LED 當檢流計。轉動 VR 直到 c、d 電位相等，電橋就平衡：R2 × VR = R3 × R4，所以 VR = R3 × R4 ÷ R2 = <span id="balTxt">560</span>Ω。</p>
+    <p class="sub">9V 電源經 R1（6.8kΩ）送到 a 點；上臂 R2、R3，下臂 R4、VR，c、d 之間接電壓表（教師版），也可改用兩顆方向相反的 LED 或檢流計。轉動 VR 直到 c、d 電位相等，電橋就平衡：R2 × VR = R3 × R4，所以 VR = R3 × R4 ÷ R2 = <span id="balTxt">560</span>Ω。</p>
   </header>
 
   <div class="grid">
@@ -124,13 +124,14 @@ footer{font-size:12.5px;color:var(--muted)}
         <button class="btn on" id="tabSch" type="button" role="tab" aria-selected="true">電路圖</button>
         <button class="btn" id="tabBB" type="button" role="tab" aria-selected="false">麵包板接線圖</button>
         <span class="hint" style="margin-left:auto">c、d 之間的指示器：</span>
-        <button class="btn on" id="indLED" type="button">LED（課本）</button>
+        <button class="btn on" id="indV" type="button">電壓表 V（教師版）</button>
+        <button class="btn" id="indLED" type="button">LED（課本）</button>
         <button class="btn" id="indG" type="button">檢流計 G</button>
       </div>
       <div class="svgbox" id="schBox"><svg class="circuit" id="circ" viewBox="0 0 640 330" role="img" aria-label="惠斯登電橋電路"></svg></div>
       <div class="svgbox" id="bbBox" hidden>
         <svg class="circuit" id="bb" viewBox="0 0 650 400" role="img" aria-label="麵包板接線圖"></svg>
-        <p class="hint" style="margin:6px 0 0">上方紅色軌接電源 +，藍色軌為 b（接電源 −，右側跳線連到下方藍色軌）。上半部是 R1、R2、R3，下半部是 R4 與 VR；兩顆 LED 跨過中間溝槽接在 c、d 之間，方向相反。</p>
+        <p class="hint" style="margin:6px 0 0">上方紅色軌接電源 +，藍色軌為 b（接電源 −，右側跳線連到下方藍色軌）。上半部是 R1、R2、R3，下半部是 R4 與 VR；c、d 之間接電壓表（或改用 LED、檢流計）。</p>
       </div>
       <div class="legend" id="ccLegend"></div>
       <div>
@@ -213,7 +214,7 @@ const E=9, VF=1.8, RLED=10, RG=100;
 const BOOK={R1:6800,R2:22000,R3:15000,R4:33000};
 const nominal={...BOOK};
 const actual={};
-const st={power:false,vrMax:100000,vr:100000,vrOut:false,ind:"led",range:"V20",red:null,black:null,showVR:false,tol:true};
+const st={power:false,vrMax:100000,vr:100000,vrOut:false,ind:"v",range:"V20",red:null,black:null,showVR:false,tol:true};
 function reroll(){for(const k in nominal)actual[k]=st.tol?nominal[k]*(1+(Math.random()*2-1)*0.05):nominal[k]}
 reroll();
 const E12=[];[10,100,1000,10000,100000].forEach(m=>[10,12,15,18,22,27,33,39,47,56,68,82].forEach(v=>E12.push(v*m/10)));E12.push(1000000);
@@ -239,7 +240,7 @@ function solve(){
   const {R1,R2,R3,R4}=actual, VR=Math.max(st.vr,0.01);
   const z={Va:0,Vb:0,Vc:0,Vd:0,Ig:0,I1:0,I2:0,IT:0,led1:0,led2:0};
   if(!st.power)return z;
-  const modes=st.ind==="g"?["g"]:["off","R","G"];
+  const modes=st.ind==="g"?["g"]:st.ind==="v"?["off"]:["off","R","G"];
   for(const m of modes){
     // 電源 E 串 R1 → 以諾頓等效注入 a 點
     const els=[["a","b",R1],["a","c",R2],["c","b",R3],["a","d",R4]],inj=[["a",E/R1]];
@@ -249,7 +250,7 @@ function solve(){
     if(m==="G"){els.push(["c","d",RLED]);inj.push(["d",VF/RLED],["c",-VF/RLED])}   // 綠 LED：d→c
     const V=nodal(["a","c","d"],els,inj),vcd=V.c-V.d;
     let I=0,ok=true;
-    if(m==="off")ok=Math.abs(vcd)<VF;
+    if(m==="off")ok=st.ind==="v"||Math.abs(vcd)<VF;
     if(m==="R"){I=(vcd-VF)/RLED;ok=I>0}
     if(m==="G"){I=(vcd+VF)/RLED;ok=I<0}
     if(m==="g")I=vcd/RG;
@@ -354,6 +355,15 @@ function drawSch(sol){
     ledV(S,350,150,false,"#ff3b30",sol.led1/0.004);  // (R)：c→d
     el("text",{x:270,y:155,class:"lbl","text-anchor":"end"},S).textContent="(G)";
     el("text",{x:378,y:132,class:"lbl"},S).textContent="(R)";
+  }else if(st.ind==="v"){
+    w("M320,70 L320,130");w("M320,170 L320,230");
+    el("circle",{cx:320,cy:150,r:20,fill:"var(--panel)",stroke:"var(--wire)","stroke-width":2.2},S);
+    el("text",{x:320,y:156,class:"lbl","text-anchor":"middle",style:"font-weight:700;font-size:16px"},S).textContent="V";
+    el("text",{x:334,y:118,class:"probe-tag",fill:"var(--red)"},S).textContent="+";
+    el("text",{x:334,y:190,class:"probe-tag",fill:"var(--black)"},S).textContent="−";
+    const vv=st.power&&!st.vrOut?sol.Vc-sol.Vd:(st.power?sol.Vc-sol.Vd:0);
+    el("rect",{x:348,y:136,width:84,height:28,rx:4,fill:"#c7d3b4",stroke:"#2b2b2b","stroke-width":2},S);
+    el("text",{x:426,y:156,"text-anchor":"end","font-family":"IBM Plex Mono,monospace","font-size":15,"font-weight":600,fill:"#1b2417"},S).textContent=(vv<-0.0005?"−":"")+Math.abs(vv).toFixed(3)+" V";
   }else{
     w("M320,70 L320,130");w("M320,170 L320,230");
     el("circle",{cx:320,cy:150,r:20,fill:"var(--panel)",stroke:"var(--wire)","stroke-width":2.2},S);
@@ -429,7 +439,7 @@ function drawBB(sol){
   if(st.ind==="led"){
     bbLed(11,"#2ecc40",sol.led2/0.004,false,"(G)");
     bbLed(13,"#ff3b30",sol.led1/0.004,true,"(R)");
-  }else e("text",{x:X(12),y:Y("f")-10,"font-size":10,fill:"#8a8a80","text-anchor":"middle"}).textContent="（改接檢流計 G）";
+  }else e("text",{x:X(12),y:Y("f")-10,"font-size":10,fill:"#8a8a80","text-anchor":"middle"}).textContent=st.ind==="v"?"（c、d 接電壓表 V）":"（改接檢流計 G）";
   if(!st.vrOut){
     jumper(11,"h",16,"f","#7b3fb5",-6);
     const px=X(17),py=Y("h");
@@ -545,22 +555,23 @@ function update(){
   else if(st.vrOut){tag.textContent="VR 已拆下";tag.className="bal mid"}
   else if(Math.abs(vcd)<0.02){tag.textContent="平衡 Vcd ≈ 0";tag.className="bal ok"}
   else if(st.ind==="led"&&sol.led1<1e-5&&sol.led2<1e-5){tag.textContent="LED 熄滅（但 Vcd ≠ 0）";tag.className="bal mid"}
-  else{tag.textContent=vcd>0?"不平衡：c 點較高（紅燈）":"不平衡：d 點較高（綠燈）";tag.className="bal no"}
+  else{tag.textContent=st.ind==="v"?(vcd>0?"不平衡：Vcd > 0（c 點較高）":"不平衡：Vcd < 0（d 點較高）"):vcd>0?"不平衡：c 點較高（紅燈）":"不平衡：d 點較高（綠燈）";tag.className="bal no"}
   $("#balTxt").textContent=Math.round(balNom());
   if(balNom()>st.vrMax){$("#note").textContent=`這組電阻的平衡點 VR = ${ohmTxt(nominal.R3)} × ${ohmTxt(nominal.R4)} ÷ ${ohmTxt(nominal.R2)} ≈ ${Math.round(balNom())}Ω，超過 VR 的最大值 ${ohmTxt(st.vrMax)}，怎麼轉都無法平衡。請換較大的可變電阻或換電阻。`;st._last=o;return}
-  $("#note").textContent=st.ind==="led"
+  $("#note").textContent=st.ind==="v"?"電壓表接在 c、d 之間（＋接 c、－接 d）。調整 VR 使 Vcd 趨近 0V 就是電橋平衡：Vcd 為負代表 d 點較高，VR 要調小；Vcd 為正則 VR 要調大。":st.ind==="led"
     ?"LED 要約 1.8V 才會亮，c、d 電位差小於這個值時 LED 就熄滅了，所以「LED 熄滅」不一定剛好平衡。要精確找平衡點，可用電表 2V 檔量 Vcd，調到最接近 0，或改用檢流計 G。"
     :"檢流計很靈敏：指針偏右代表電流由 c 流向 d（c 點較高），偏左代表 d 點較高。調整 VR 讓指針回到中間，就是電橋平衡。";
   st._last=o;
 }
 
 /* ---------- 學習單 ---------- */
+const preVcd=()=>{const s={vr:st.vr,vrOut:st.vrOut,power:st.power,ind:st.ind};Object.assign(st,{vr:st.vrMax,vrOut:false,power:true,ind:"v"});const r=solve();Object.assign(st,s);return r.Vc-r.Vd};
 const balSol=()=>{const s={vr:st.vr,vrOut:st.vrOut,power:st.power};st.vr=Math.round(vrBal());st.vrOut=false;st.power=true;const r=solve();Object.assign(st,s);return r};
 let SHEET;
 function makeSheet(){const n=nominal,o=ohmTxt,bn=Math.round(balNom());SHEET=[
-  {sec:`4. 接上電源（VR 順時針調至最大 ${ohmTxt(st.vrMax)}）`},
-  {k:"q1",label:"LED 是否發亮？",type:"yn"},
-  {sec:"5. VR 轉至 0Ω（LED 亮）後慢慢調大，直到 LED 熄滅；拆下 VR 量電阻"},
+  {sec:`2～4. 電壓表接 c、d，VR 調至最大 ${ohmTxt(st.vrMax)}，接上 9V 電源，記錄調整前 c、d 間電壓`},
+  {k:"m0",label:"調整前 Vcd =",unit:"V",type:"meas",exp:()=>preVcd()},
+  {sec:"5. 調整 VR 使 c、d 間電壓接近 0V；斷開電源後拆下 VR，用電表量電阻"},
   {k:"mVR",label:"可變電阻 VR =",unit:"Ω",type:"meas",tol:0.05,exp:()=>vrBal()},
   {k:"q2",label:`是否等於 ${bn}Ω（R3 × R4 ÷ R2）？`,type:"yn"},
   {sec:"6-(1) 電橋平衡時量測電壓（DCV 20V 檔；Vcd 可用 2V 檔）"},
@@ -599,7 +610,7 @@ function check(){
     const v=parseFloat(e.value),x=r.exp();
     const ok=r.abs!=null?Math.abs(v-x)<=r.abs:Math.abs(v-x)<=Math.abs(x)*(r.tol||0.03);
     let txt=ok?"✓ 正確":"✗ 再檢查";
-    if(!ok&&r.k==="mVR"&&v<x)txt="✗ 偏小：LED 熄滅時還沒真正平衡，請量 Vcd 微調";
+    if(!ok&&r.k==="mVR"&&v<x)txt="✗ 偏小：Vcd 還沒調到 0，請再微調 VR";
     mk.textContent=txt;mk.className="mark "+(ok?"ok":"bad")});
 }
 
@@ -608,7 +619,8 @@ function setView(v){$("#schBox").hidden=v!=="sch";$("#bbBox").hidden=v!=="bb";
   $("#tabSch").classList.toggle("on",v==="sch");$("#tabBB").classList.toggle("on",v==="bb");
   $("#tabSch").setAttribute("aria-selected",v==="sch");$("#tabBB").setAttribute("aria-selected",v==="bb")}
 $("#tabSch").addEventListener("click",()=>setView("sch"));$("#tabBB").addEventListener("click",()=>setView("bb"));
-function setInd(v){st.ind=v;$("#indLED").classList.toggle("on",v==="led");$("#indG").classList.toggle("on",v==="g");update()}
+function setInd(v){st.ind=v;$("#indV").classList.toggle("on",v==="v");$("#indLED").classList.toggle("on",v==="led");$("#indG").classList.toggle("on",v==="g");update()}
+$("#indV").addEventListener("click",()=>setInd("v"));
 $("#indLED").addEventListener("click",()=>setInd("led"));$("#indG").addEventListener("click",()=>setInd("g"));
 $("#pwrBtn").addEventListener("click",()=>{st.power=!st.power;update()});
 const VRU_=()=>Math.max(1,st.vrMax/1000);
@@ -661,6 +673,8 @@ $("#reroll").addEventListener("click",()=>{reroll();fillAns();st._info=st.tol?"�
 const F_=(v,d=2)=>(+v).toFixed(d),P_=(a,b)=>a*b/(a+b);
 const B_=()=>{const n=nominal,vr=balNom(),Rb=P_(n.R2+n.R3,n.R4+vr),Va=E*Rb/(n.R1+Rb);return {n,vr,Rb,Va,Vc:Va*n.R3/(n.R2+n.R3),Vd:Va*vr/(n.R4+vr)}};
 const HOW_={
+  m0:()=>{const n=nominal,M=st.vrMax,Rb=P_(n.R2+n.R3,n.R4+M),Va=E*Rb/(n.R1+Rb),Vc=Va*n.R3/(n.R2+n.R3),Vd=Va*M/(n.R4+M);
+    return `VR = ${ohmTxt(M)}：電橋 ${ohmTxt(n.R2+n.R3)}//${ohmTxt(n.R4+M)} = ${F_(Rb/1000,2)}kΩ；Vab = ${E}×${F_(Rb/1000,2)}÷(${F_(n.R1/1000,1)}+${F_(Rb/1000,2)}) = ${F_(Va,3)}V；Vc = ${F_(Vc,3)}V、Vd = ${F_(Vd,3)}V；Vcd = ${F_(Vc-Vd,3)}V`},
   mVR:()=>{const n=nominal;return `平衡條件 VR×R2 = R3×R4 → VR = ${n.R3}×${n.R4}÷${n.R2} = ${F_(balNom(),0)}Ω`},
   Vab:()=>{const b=B_();return `電橋 (R2+R3)//(R4+VR) = ${b.n.R2+b.n.R3}//${F_(b.n.R4+b.vr,0)} = ${F_(b.Rb,1)}Ω；Vab = ${E}×${F_(b.Rb,1)}÷(${b.n.R1}+${F_(b.Rb,1)}) = ${F_(b.Va,3)}V`},
   Vcb:()=>{const b=B_();return `Vab×R3÷(R2+R3) = ${F_(b.Va,3)}×${b.n.R3}÷${b.n.R2+b.n.R3} = ${F_(b.Vc,3)}V`},
