@@ -148,6 +148,7 @@ footer{font-size:12.5px;color:var(--muted)}
       <div class="msg" id="msg" role="status"></div>
       <div class="dial" id="dial" role="group" aria-label="檔位旋鈕"></div>
       <div class="row">
+        <button class="btn" id="swapBtn" type="button" aria-pressed="false">紅黑棒對調</button>
         <button class="btn" id="clearProbe" type="button">移開電表</button>
         <button class="btn" id="logBtn" type="button">記錄此讀值</button>
       </div>
@@ -218,7 +219,7 @@ const NS="http://www.w3.org/2000/svg";
 const BOOK={R1:120,R2:220,R3:120,R4:560};
 const NAME={R1:"R1 左 120Ω",R2:"R2 中上 220Ω",R3:"R3 中下 120Ω",R4:"R4 560Ω"};
 const nominal={...BOOK},actual={};
-const st={e1:true,e2:true,V1:9,V2:9,range:"A20",red:null,black:null,brk:"R",tol:true,showSum:false,view:"sch"};
+const st={e1:true,e2:true,V1:9,V2:9,range:"A20",red:null,black:null,brk:"R",flip:false,tol:true,showSum:false,view:"sch"};
 function reroll(){for(const k in nominal)actual[k]=st.tol?nominal[k]*(1+(Math.random()*2-1)*0.05):nominal[k]}
 reroll();
 const E12=[];[10,100,1000].forEach(m=>[10,12,15,18,22,27,33,39,47,56,68,82].forEach(v=>E12.push(v*m/10)));E12.push(10000);
@@ -327,8 +328,9 @@ function drawSch(sol){
       const a=el("g",{class:"ammeter"},S);el("circle",{cx:x,cy:y,r:13},a);el("text",{x,y:y+5,"text-anchor":"middle"},a).textContent="A";
       // 紅棒在 a 側
       const rp=id==="L"?[x+22,y-12]:id==="R"?[x-22,y-12]:[x+22,y-6], bp=id==="L"?[x-22,y-12]:id==="R"?[x+22,y-12]:[x+22,y+14];
-      el("text",{x:rp[0],y:rp[1],class:"probe-tag",fill:"var(--red)","text-anchor":"middle"},S).textContent="紅";
-      el("text",{x:bp[0],y:bp[1],class:"probe-tag",fill:"var(--black)","text-anchor":"middle"},S).textContent="黑";
+      const P1=st.flip?bp:rp,P2=st.flip?rp:bp;
+      el("text",{x:P1[0],y:P1[1],class:"probe-tag",fill:"var(--red)","text-anchor":"middle"},S).textContent="紅";
+      el("text",{x:P2[0],y:P2[1],class:"probe-tag",fill:"var(--black)","text-anchor":"middle"},S).textContent="黑";
       return;
     }
     if(horiz)w(`M${x-10},${y} L${x+10},${y}`);else w(`M${x},${y-10} L${x},${y+10}`);
@@ -337,7 +339,7 @@ function drawSch(sol){
     el("circle",{cx:x,cy:y,r:9,class:"tgt"},b);
     el("path",{d:`M${x-4},${y-4} L${x+4},${y+4} M${x+4},${y-4} L${x-4},${y+4}`,class:"x"},b);
     el("title",{},b).textContent="取下"+BRKS[id][0]+"的連接線，串入電表";
-    const go=()=>{st.brk=id;update()};
+    const go=()=>{st.brk=id;st.flip=false;update()};
     b.addEventListener("click",go);b.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go()}});
   });
   // 節點
@@ -394,8 +396,8 @@ function drawBB(){
     const x1=X(c1),y1=Y(r1),x2=X(c2),y2=Y(r2),mx=(x1+x2)/2,my=(y1+y2)/2;
     if(st.brk===id&&isA){
       const ax=mx,ay=my-lift-4;
-      e("path",{d:`M${x1},${y1} Q${(x1+ax)/2},${ay} ${ax},${ay}`,fill:"none",stroke:"#d32f2f","stroke-width":2.6});
-      e("path",{d:`M${ax},${ay} Q${(x2+ax)/2},${ay} ${x2},${y2}`,fill:"none",stroke:"#222","stroke-width":2.6});
+      e("path",{d:`M${x1},${y1} Q${(x1+ax)/2},${ay} ${ax},${ay}`,fill:"none",stroke:st.flip?"#222":"#d32f2f","stroke-width":2.6});
+      e("path",{d:`M${ax},${ay} Q${(x2+ax)/2},${ay} ${x2},${y2}`,fill:"none",stroke:st.flip?"#d32f2f":"#222","stroke-width":2.6});
       e("circle",{cx:ax,cy:ay,r:12,fill:"#fff",stroke:"#e6b92e","stroke-width":3});
       e("text",{x:ax,y:ay+4.5,"font-size":12,"font-weight":700,"text-anchor":"middle",fill:"#222"}).textContent="A";
       return;
@@ -406,7 +408,7 @@ function drawBB(){
     const g=e("g",{class:"brk",tabindex:0,role:"button","aria-label":"取下"+BRKS[id][0]+"的連接線並串入電表"});
     el("circle",{cx:px,cy:py,r:8,fill:"#fff",stroke:"#1f7a5a","stroke-width":1.6,"stroke-dasharray":"3 2"},g);
     el("path",{d:`M${px-3.5},${py-3.5} L${px+3.5},${py+3.5} M${px+3.5},${py-3.5} L${px-3.5},${py+3.5}`,stroke:"#1f7a5a","stroke-width":2},g);
-    const go=()=>{st.brk=id;update()};
+    const go=()=>{st.brk=id;st.flip=false;update()};
     g.addEventListener("click",go);g.addEventListener("keydown",ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();go()}});
   }
   // 依教師版圖 3-15 麵包板排列（元件拉開間距避免重疊）：上方＋軌就是 a（c 也在此軌）；
@@ -490,10 +492,11 @@ function reading(sol){
   if(r.type==="off"){out.msg="電表在 OFF 檔。";return out}
   if(r.type==="A"){
     if(!st.brk){out.digits=(0).toFixed(r.dec);out.msg="電流檔須串聯：點 a 點連接線上的 ✕，取下該線並串入電表（紅棒接 a 點）。";return out}
-    const I={L:sol.IL,M:sol.IM,R:sol.IR}[st.brk]*1000;Object.assign(out,show(r,I));
+    const I0={L:sol.IL,M:sol.IM,R:sol.IR}[st.brk]*1000,I=st.flip?-I0:I0;Object.assign(out,show(r,I));
     if(out.ol){out.msg=`超過 ${r.label} 檔！請立刻改用較大的電流檔。`;out.lvl="bad";return out}
-    out.log=`${BRKS[st.brk][1]} = ${out.sign}${out.digits} mA　[${srcTxt()}，DCA ${r.label}]`;
-    if(I<-1e-6)out.msg="讀值為負：電流實際上是流向 a 點（與紅棒進、黑棒出的方向相反）。重疊時要連同正負號一起相加。",out.lvl="warn";
+    out.log=`${BRKS[st.brk][1]} = ${out.sign}${out.digits} mA${st.flip?"（紅黑棒對調）":""}　[${srcTxt()}，DCA ${r.label}]`;
+    if(I<-1e-6)out.msg=(st.flip?"讀值為負：紅黑棒對調後方向又相反了，再按一次「紅黑棒對調」即可。":"讀值為負：電流實際上是流向 a 點（與紅棒進、黑棒出的方向相反）。可按「紅黑棒對調」讓讀值變正；記錄時要記得此電流的方向是流向 a，重疊相加時取負號。"),out.lvl="warn";
+    else if(st.flip&&I>1e-6)out.msg=`紅黑棒已對調，讀值 ${out.digits} mA；此電流實際方向是流向 a 點，重疊相加時取負號。`,out.lvl="warn";
     else if(r.id!=="A2"&&Math.abs(I)<r.full/10)out.msg="讀值偏小，可改用較小的電流檔提高解析度。",out.lvl="warn";
     else out.msg=`${BRKS[st.brk][1]} 讀值 ${out.digits} mA（${srcTxt()}）`,out.lvl="ok";
     return out;
@@ -523,6 +526,7 @@ function update(){
   $("#aOL").className=o.ol?"":"dim";
   $("#dSign").textContent=o.sign;$("#dVal").textContent=r.type==="off"?"":o.digits;$("#dUnit").textContent=r.type==="off"?"":o.unit;
   const m=$("#msg");m.textContent=o.msg;m.className="msg "+(o.lvl||"");
+  $("#swapBtn").classList.toggle("on",st.flip);$("#swapBtn").setAttribute("aria-pressed",st.flip);
   [["e1Bat",st.e1],["e1Sh",!st.e1],["e2Bat",st.e2],["e2Sh",!st.e2]].forEach(([id,on])=>$("#"+id).classList.toggle("on",on));
   const L=solve(actual,st.V1,0).IR,M=solve(actual,0,st.V2).IR,Bo=solve(actual,st.V1,st.V2).IR;
   const sh=st.showSum;
@@ -539,7 +543,7 @@ const QUICK=[
   ["量 Vab",{e1:true,e2:true,range:"V20",brk:null,red:"a",black:"b"}],
 ];
 QUICK.forEach(([lab,cfg])=>{const b=document.createElement("button");b.type="button";b.className="btn";b.textContent=lab;
-  b.addEventListener("click",()=>{Object.assign(st,cfg);buildDial();update()});$("#quick").appendChild(b)});
+  b.addEventListener("click",()=>{Object.assign(st,cfg);st.flip=false;buildDial();update()});$("#quick").appendChild(b)});
 
 /* ---------- 電阻設定 ---------- */
 function buildLegend(){
@@ -619,7 +623,12 @@ $("#e2V").addEventListener("change",e=>{st.V2=clampV(parseFloat(e.target.value))
 $("#showSum").addEventListener("change",e=>{st.showSum=e.target.checked;update()});
 $("#tolChk").addEventListener("change",e=>{st.tol=e.target.checked;reroll();fillAns();update()});
 $("#reroll").addEventListener("click",()=>{reroll();fillAns();st._info=st.tol?"已換上同標稱值的另一組電阻（實際值在 ±5% 內不同），請重新量測。":"目前使用理想電阻，勾選「±5% 誤差」後換組才會有差異。";update()});
-$("#clearProbe").addEventListener("click",()=>{st.red=st.black=null;st.brk=null;update()});
+$("#clearProbe").addEventListener("click",()=>{st.red=st.black=null;st.brk=null;st.flip=false;update()});
+$("#swapBtn").addEventListener("click",()=>{
+  if(R().type==="A"&&st.brk){st.flip=!st.flip}
+  else if(st.red&&st.black){[st.red,st.black]=[st.black,st.red]}
+  else{st._info="先把電表接上（電流檔串入或兩支表棒都接好）再對調。"}
+  update()});
 $("#logBtn").addEventListener("click",()=>{const o=st._last;if(!o||!o.log){$("#msg").textContent="目前沒有有效讀值可記錄。";$("#msg").className="msg warn";return}
   const li=document.createElement("li");li.textContent=o.log;$("#log").prepend(li)});
 $("#checkBtn").addEventListener("click",check);
