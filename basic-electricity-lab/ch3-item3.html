@@ -171,12 +171,11 @@ footer{font-size:12.5px;color:var(--muted)}
     <div class="vrbar">
       <svg class="knob" id="knob" viewBox="0 0 80 80" aria-hidden="true"></svg>
       <div style="min-width:0">
-        <input type="range" id="vr" min="0" max="100000" step="50" value="100000" aria-label="轉動可變電阻">
+        <input type="range" id="vr" min="0" max="100000" step="1" value="100000" aria-label="轉動可變電阻">
         <div class="row" style="justify-content:space-between">
           <span class="hint">0Ω（逆時針到底）</span>
           <span class="row" style="gap:4px">
-            <button class="btn" type="button" data-d="-10">−1k</button><button class="btn" type="button" data-d="-1">−100</button>
-            <button class="btn" type="button" data-d="1">+100</button><button class="btn" type="button" data-d="10">+1k</button>
+            <span class="row" id="vrSteps" style="gap:4px"></span>
           </span>
           <span class="hint"><span id="vrMaxEnd">100kΩ</span>（順時針到底）</span>
         </div>
@@ -635,16 +634,20 @@ function setInd(v){st.ind=v;$("#indV").classList.toggle("on",v==="v");$("#indLED
 $("#indV").addEventListener("click",()=>setInd("v"));
 $("#indLED").addEventListener("click",()=>setInd("led"));$("#indG").addEventListener("click",()=>setInd("g"));
 $("#pwrBtn").addEventListener("click",()=>{st.power=!st.power;update()});
-const VRU_=()=>Math.max(1,st.vrMax/1000);
-const VRLBL_=()=>document.querySelectorAll("[data-d]").forEach(b=>{const v=Math.abs(+b.dataset.d)*VRU_();b.textContent=(+b.dataset.d<0?"−":"+")+(v>=1000?(v/1000)+"k":v)});
+// 微調鈕：依規格顯示 ±1k、±100、±10、±1（步進小於 VR 最大值才顯示）
+const VRLBL_=()=>{const box=$("#vrSteps");box.innerHTML="";
+  const steps=[1000,100,10,1].filter(s=>s<st.vrMax),lab=v=>v>=1000?(v/1000)+"k":String(v);
+  [...steps.map(s=>-s),...steps.slice().reverse()].forEach(d=>{const b=document.createElement("button");b.type="button";b.className="btn";
+    b.textContent=(d<0?"−":"+")+lab(Math.abs(d));b.setAttribute("aria-label",(d<0?"減少 ":"增加 ")+Math.abs(d)+" 歐姆");
+    b.addEventListener("click",()=>{st.vr=Math.max(0,Math.min(st.vrMax,st.vr+d));update()});box.appendChild(b)})};
+VRLBL_();
 $("#vr").addEventListener("input",e=>{st.vr=+e.target.value;update()});
 $("#vrMax").addEventListener("change",e=>{
   st.vrMax=+e.target.value;st.vr=Math.min(st.vr,st.vrMax);
-  $("#vr").max=st.vrMax;$("#vr").step=st.vrMax>=50000?50:st.vrMax>=5000?5:1;VRLBL_();
+  $("#vr").max=st.vrMax;$("#vr").step=1;VRLBL_();
   $("#vrMaxH").textContent=$("#vrMaxEnd").textContent=ohmTxt(st.vrMax);
   $("#vrMaxTip").textContent=balNom()>st.vrMax?"注意：這組電阻的平衡點超過此規格，VR 調不到平衡。":"";
   buildSheet();fillAns();buildLegend();st._info=`可變電阻換成 ${ohmTxt(st.vrMax)}。`;update()});
-document.querySelectorAll("[data-d]").forEach(b=>b.addEventListener("click",()=>{st.vr=Math.max(0,Math.min(st.vrMax,st.vr+ (+b.dataset.d)*VRU_()));update()}));
 $("#vrOutBtn").addEventListener("click",()=>{st.vrOut=!st.vrOut;st.red=st.black=null;
   if(st.vrOut){st._info="VR 已拆下，旋鈕位置不變。切到 Ω 檔，點拆下的 VR 兩端量電阻。"}update()});
 $("#showVR").addEventListener("change",e=>{st.showVR=e.target.checked;update()});
