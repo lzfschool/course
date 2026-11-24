@@ -304,17 +304,22 @@ function draw(){
   res.forEach(([k,x1,y1,x2,y2,lx,ly,anc])=>{colorRes(x1,y1,x2,y2,nominal[k],k);
     const ox=anc==="end"?-3:anc==="start"?3:0, oy=anc==="middle"?-4:0;
     const t=el("text",{x:lx+ox,y:ly+oy,class:"lbl","text-anchor":anc});t.textContent=ohmTxt(nominal[k])});
-  let t=el("text",{x:372,y:118,class:"lbl small"});t.textContent=`R1 = ${ohmTxt(nominal.Rp1)} // ${ohmTxt(nominal.Rp2)}`;
-  t=el("text",{x:560,y:204,class:"lbl small","text-anchor":"middle"});t.textContent="R2";
+  let t;
+  // 圖 3-6 的電流方向與 Rab 標示
+  const arrow=(d,lab,lx,ly)=>{el("path",{d,fill:"none",stroke:"#c0392b","stroke-width":1.6});
+    const tx=el("text",{x:lx,y:ly,fill:"#c0392b","font-size":15,"font-style":"italic","font-family":"Georgia,serif"});tx.innerHTML=lab};
+  arrow("M246,76 L280,76 m-7,-5 l7,5 l-7,5",'I',258,96);
+  arrow("M314,72 L314,104 m-5,-7 l5,7 l5,-7",'I<tspan font-size="11" dy="4">1</tspan>',320,96);
+  arrow("M514,66 L514,96 m-5,-7 l5,7 l5,-7",'I<tspan font-size="11" dy="4">2</tspan>',520,84);
+  arrow("M196,284 L196,252 m-5,7 l5,-7 l5,7",'R<tspan font-size="11" dy="4">ab</tspan>',204,292);
   // 直流電源
   const g=el("g",{class:"batt"});
   el("line",{x1:44,y1:172,x2:76,y2:172,stroke:"var(--wire)","stroke-width":2.6},g);
   el("line",{x1:52,y1:188,x2:68,y2:188,stroke:"var(--wire)","stroke-width":5},g);
   t=el("text",{x:84,y:177,class:"lbl"},g);t.textContent="+";
   t=el("text",{x:84,y:196,class:"lbl"},g);t.textContent="−";
-  t=el("text",{x:24,y:178,class:"lbl","text-anchor":"middle"},g);t.textContent="DC";
-  t=el("text",{x:24,y:194,class:"lbl","text-anchor":"middle"},g);t.textContent=VS+"V";
-  if(!st.power){t=el("text",{x:24,y:214,class:"lbl small","text-anchor":"middle"});t.textContent="未接上"}
+  t=el("text",{x:30,y:186,class:"lbl","text-anchor":"middle"},g);t.textContent=VS+"V";
+  if(!st.power){t=el("text",{x:30,y:214,class:"lbl small","text-anchor":"middle"});t.textContent="未接上"}
   // 斷開點（電流檔）
   const brks=[["I",180,300,"b 點至電源負端"],["I1",300,90,"a 點至 R1"],["I2",500,88,"a 點至 R2"]];
   const isA=R().type==="A";
@@ -337,13 +342,13 @@ function draw(){
     }
   });
   // 節點
-  const nodes=[["P",60,60,"電源＋端",0,0],["a",300,60,"a",8,-10],["c",500,200,"c",-22,6],["b",300,300,"b",8,22]];
+  const nodes=[["P",60,60,"電源＋端",0,0],["a",300,60,"a",8,-10],["c",500,200,"c",12,6],["b",300,300,"b",8,22]];
   nodes.forEach(([id,x,y,lab,dx,dy])=>{
     el("circle",{cx:x,cy:y,r:5,class:"node"});
     const hit=el("circle",{cx:x,cy:y,r:16,class:"node-hit",tabindex:0,role:"button","aria-label":"節點 "+lab});
     const cls=st.red===id?"ring red":st.black===id?"ring black":"ring";
     el("circle",{cx:x,cy:y,r:11,class:cls});
-    if(id==="P"){const t2=el("text",{x:70,y:48,class:"lbl small"});t2.textContent="電源＋端"}
+    if(id==="P"){}
     else{const tx=el("text",{x:x+dx,y:y+dy,class:"nodelbl"});tx.textContent=lab}
     if(st.red===id||st.black===id){
       const q=el("text",{x:x+(id==="c"?18:-26),y:y+(id==="b"?-12:id==="P"?28:-12),class:"probe-tag",fill:st.red===id?"var(--red)":"var(--black)"});
