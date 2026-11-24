@@ -108,7 +108,7 @@ footer{font-size:12.5px;color:var(--muted)}
     <a href="../index.html?course=basic-electricity-lab&amp;ch=3" style="display:inline-block;font-size:13px;color:var(--accent);text-decoration:none;margin-bottom:4px">← 回實習目錄</a>
     <div class="eyebrow">基本電學實習 第 3 章 · 3-2 惠斯登電橋</div>
     <h1>工作項目 3：惠斯登電橋之平衡條件求未知電阻</h1>
-    <p class="sub">9V 電源經 R1（220Ω）送到 a 點；上臂 R2、R3，下臂 R4、VR，c、d 之間接兩顆方向相反的 LED 當檢流計。轉動 VR 直到 c、d 電位相等，電橋就平衡：R2 × VR = R3 × R4，所以 VR = R3 × R4 ÷ R2 = <span id="balTxt">560</span>Ω。</p>
+    <p class="sub">9V 電源經 R1（6.8kΩ）送到 a 點；上臂 R2、R3，下臂 R4、VR，c、d 之間接兩顆方向相反的 LED 當檢流計。轉動 VR 直到 c、d 電位相等，電橋就平衡：R2 × VR = R3 × R4，所以 VR = R3 × R4 ÷ R2 = <span id="balTxt">560</span>Ω。</p>
   </header>
 
   <div class="grid">
@@ -163,21 +163,21 @@ footer{font-size:12.5px;color:var(--muted)}
 
   <section class="panel" aria-label="可變電阻調整">
     <div class="row" style="justify-content:space-between">
-      <h2>調整可變電阻 VR（<span id="vrMaxH">1kΩ</span>）</h2>
+      <h2>調整可變電阻 VR（<span id="vrMaxH">100kΩ</span>）</h2>
       <div class="ind"><span class="hint">電橋狀態</span><span class="bal" id="balTag"></span></div>
     </div>
-    <div class="row"><label class="hint" for="vrMax">更換可變電阻規格</label><select class="btn" id="vrMax"><option value="500">500Ω</option><option value="1000" selected>1kΩ（課本）</option><option value="2000">2kΩ</option><option value="5000">5kΩ</option><option value="10000">10kΩ</option></select><span class="hint" id="vrMaxTip"></span></div>
+    <div class="row"><label class="hint" for="vrMax">更換可變電阻規格</label><select class="btn" id="vrMax"><option value="500">500Ω</option><option value="1000">1kΩ（課本）</option><option value="2000">2kΩ</option><option value="5000">5kΩ</option><option value="10000">10kΩ</option><option value="20000">20kΩ</option><option value="50000">50kΩ</option><option value="100000" selected>100kΩ（教師版）</option></select><span class="hint" id="vrMaxTip"></span></div>
     <div class="vrbar">
       <svg class="knob" id="knob" viewBox="0 0 80 80" aria-hidden="true"></svg>
       <div style="min-width:0">
-        <input type="range" id="vr" min="0" max="1000" step="1" value="1000" aria-label="轉動可變電阻">
+        <input type="range" id="vr" min="0" max="100000" step="50" value="100000" aria-label="轉動可變電阻">
         <div class="row" style="justify-content:space-between">
           <span class="hint">0Ω（逆時針到底）</span>
           <span class="row" style="gap:4px">
-            <button class="btn" type="button" data-d="-10">−10</button><button class="btn" type="button" data-d="-1">−1</button>
-            <button class="btn" type="button" data-d="1">+1</button><button class="btn" type="button" data-d="10">+10</button>
+            <button class="btn" type="button" data-d="-10">−1k</button><button class="btn" type="button" data-d="-1">−100</button>
+            <button class="btn" type="button" data-d="1">+100</button><button class="btn" type="button" data-d="10">+1k</button>
           </span>
-          <span class="hint"><span id="vrMaxEnd">1kΩ</span>（順時針到底）</span>
+          <span class="hint"><span id="vrMaxEnd">100kΩ</span>（順時針到底）</span>
         </div>
       </div>
       <div class="row" style="flex-direction:column;align-items:stretch;gap:6px">
@@ -210,13 +210,13 @@ footer{font-size:12.5px;color:var(--muted)}
 const $=s=>document.querySelector(s);
 const NS="http://www.w3.org/2000/svg";
 const E=9, VF=1.8, RLED=10, RG=100;
-const BOOK={R1:220,R2:120,R3:560,R4:120};
+const BOOK={R1:6800,R2:22000,R3:15000,R4:33000};
 const nominal={...BOOK};
 const actual={};
-const st={power:false,vrMax:1000,vr:1000,vrOut:false,ind:"led",range:"V20",red:null,black:null,showVR:false,tol:true};
+const st={power:false,vrMax:100000,vr:100000,vrOut:false,ind:"led",range:"V20",red:null,black:null,showVR:false,tol:true};
 function reroll(){for(const k in nominal)actual[k]=st.tol?nominal[k]*(1+(Math.random()*2-1)*0.05):nominal[k]}
 reroll();
-const E12=[];[10,100,1000].forEach(m=>[10,12,15,18,22,27,33,39,47,56,68,82].forEach(v=>E12.push(v*m/10)));E12.push(10000);
+const E12=[];[10,100,1000,10000,100000].forEach(m=>[10,12,15,18,22,27,33,39,47,56,68,82].forEach(v=>E12.push(v*m/10)));E12.push(1000000);
 const ohmTxt=v=>v>=1000?(v/1000)+"kΩ":v+"Ω";
 const balNom=()=>nominal.R3*nominal.R4/nominal.R2;
 
@@ -485,7 +485,7 @@ const RANGES=[
   {grp:"DCV 直流電壓"},
   {id:"V2",type:"V",label:"2V",full:1.999,k:1,unit:"V",dec:3},{id:"V20",type:"V",label:"20V",full:19.99,k:1,unit:"V",dec:2},{id:"V200",type:"V",label:"200V",full:199.9,k:1,unit:"V",dec:1},
   {grp:"Ω 電阻"},
-  {id:"R200",type:"ohm",label:"200Ω",full:199.9,k:1,unit:"Ω",dec:1},{id:"R2k",type:"ohm",label:"2kΩ",full:1.999,k:1e-3,unit:"kΩ",dec:3},{id:"R20k",type:"ohm",label:"20kΩ",full:19.99,k:1e-3,unit:"kΩ",dec:2},
+  {id:"R200",type:"ohm",label:"200Ω",full:199.9,k:1,unit:"Ω",dec:1},{id:"R2k",type:"ohm",label:"2kΩ",full:1.999,k:1e-3,unit:"kΩ",dec:3},{id:"R20k",type:"ohm",label:"20kΩ",full:19.99,k:1e-3,unit:"kΩ",dec:2},{id:"R200k",type:"ohm",label:"200kΩ",full:199.9,k:1e-3,unit:"kΩ",dec:1},
   {grp:""},{id:"OFF",type:"off",label:"OFF"}];
 const R=()=>RANGES.find(r=>r.id===st.range);
 function buildDial(){
@@ -591,8 +591,8 @@ function buildSheet(){
 function fillAns(){
   const q1=(()=>{const s={vr:st.vr,vrOut:st.vrOut,power:st.power,ind:st.ind};Object.assign(st,{vr:st.vrMax,vrOut:false,power:true,ind:"led"});const r=solve();Object.assign(st,s);return r.led1+r.led2>1e-5?"是":"否"})();
   SHEET.forEach(r=>{if(!r.k)return;const a=$("#an-"+r.k);
-    if(r.exp)a.textContent="參考 "+r.exp().toFixed(r.unit==="Ω"?0:r.unit==="mA"?2:3);
-    else a.textContent={q1:"參考 "+q1,q2:balNom()>st.vrMax?`參考 否（平衡點超過 ${ohmTxt(st.vrMax)}，VR 調不到）`:"參考 是（約等於）",q3:"參考 是",q4:"參考 是（約相等）"}[r.k]||""})}
+    if(r.exp)a.textContent="參考 "+r.exp().toFixed(r.unit==="Ω"?0:r.unit==="mA"?(Math.abs(r.exp())<1?4:2):3);
+    else a.textContent={q1:"參考 "+q1,q2:balNom()>st.vrMax?`參考 否（平衡點超過 ${ohmTxt(st.vrMax)}，VR 調不到）`:"參考 是（約等於）",q3:"參考 是",q4:(()=>{const n=nominal,a=n.R2+n.R3,b=n.R4+balNom();return Math.abs(a-b)/a<0.02?"參考 是（約相等）":`參考 否（兩分路電阻 ${ohmTxt(Math.round(a))} 與 ${ohmTxt(Math.round(b))} 不同）`})()}[r.k]||""})}
 function check(){
   SHEET.forEach(r=>{if(!r.k||!r.exp)return;const e=$("#ws-"+r.k),mk=$("#mk-"+r.k);
     if(e.value===""){mk.textContent="";mk.className="mark";return}
@@ -611,14 +611,16 @@ $("#tabSch").addEventListener("click",()=>setView("sch"));$("#tabBB").addEventLi
 function setInd(v){st.ind=v;$("#indLED").classList.toggle("on",v==="led");$("#indG").classList.toggle("on",v==="g");update()}
 $("#indLED").addEventListener("click",()=>setInd("led"));$("#indG").addEventListener("click",()=>setInd("g"));
 $("#pwrBtn").addEventListener("click",()=>{st.power=!st.power;update()});
+const VRU_=()=>Math.max(1,st.vrMax/1000);
+const VRLBL_=()=>document.querySelectorAll("[data-d]").forEach(b=>{const v=Math.abs(+b.dataset.d)*VRU_();b.textContent=(+b.dataset.d<0?"−":"+")+(v>=1000?(v/1000)+"k":v)});
 $("#vr").addEventListener("input",e=>{st.vr=+e.target.value;update()});
 $("#vrMax").addEventListener("change",e=>{
   st.vrMax=+e.target.value;st.vr=Math.min(st.vr,st.vrMax);
-  $("#vr").max=st.vrMax;$("#vr").step=st.vrMax>=5000?5:1;
+  $("#vr").max=st.vrMax;$("#vr").step=st.vrMax>=50000?50:st.vrMax>=5000?5:1;VRLBL_();
   $("#vrMaxH").textContent=$("#vrMaxEnd").textContent=ohmTxt(st.vrMax);
   $("#vrMaxTip").textContent=balNom()>st.vrMax?"注意：這組電阻的平衡點超過此規格，VR 調不到平衡。":"";
   buildSheet();fillAns();buildLegend();st._info=`可變電阻換成 ${ohmTxt(st.vrMax)}。`;update()});
-document.querySelectorAll("[data-d]").forEach(b=>b.addEventListener("click",()=>{st.vr=Math.max(0,Math.min(st.vrMax,st.vr+ +b.dataset.d));update()}));
+document.querySelectorAll("[data-d]").forEach(b=>b.addEventListener("click",()=>{st.vr=Math.max(0,Math.min(st.vrMax,st.vr+ (+b.dataset.d)*VRU_()));update()}));
 $("#vrOutBtn").addEventListener("click",()=>{st.vrOut=!st.vrOut;st.red=st.black=null;
   if(st.vrOut){st._info="VR 已拆下，旋鈕位置不變。切到 Ω 檔，點拆下的 VR 兩端量電阻。"}update()});
 $("#showVR").addEventListener("change",e=>{st.showVR=e.target.checked;update()});
@@ -664,8 +666,8 @@ const HOW_={
   Vcb:()=>{const b=B_();return `Vab×R3÷(R2+R3) = ${F_(b.Va,3)}×${b.n.R3}÷${b.n.R2+b.n.R3} = ${F_(b.Vc,3)}V`},
   Vdb:()=>{const b=B_();return `Vab×VR÷(R4+VR) = ${F_(b.Va,3)}×${F_(b.vr,0)}÷${F_(b.n.R4+b.vr,0)} = ${F_(b.Vd,3)}V`},
   Vcd:()=>{const b=B_();return `Vcb−Vdb = ${F_(b.Vc,3)}−${F_(b.Vd,3)} = 0V（平衡）`},
-  I1:()=>{const b=B_();return `${F_(b.Va,3)}÷${b.n.R2+b.n.R3} = ${F_(b.Va/(b.n.R2+b.n.R3)*1000,3)}mA`},
-  I2:()=>{const b=B_();return `${F_(b.Va,3)}÷${F_(b.n.R4+b.vr,0)} = ${F_(b.Va/(b.n.R4+b.vr)*1000,3)}mA`}};
+  I1:()=>{const b=B_();return `${F_(b.Va,3)}V÷${ohmTxt(b.n.R2+b.n.R3)} = ${F_(b.Va/(b.n.R2+b.n.R3)*1000,4)}mA`},
+  I2:()=>{const b=B_();return `${F_(b.Va,3)}V÷${ohmTxt(Math.round(b.n.R4+b.vr))} = ${F_(b.Va/(b.n.R4+b.vr)*1000,4)}mA`}};
 const _fillAns=fillAns;
 fillAns=function(){_fillAns();SHEET.forEach(r=>{if(!r.k||!HOW_[r.k])return;const a=document.getElementById("an-"+r.k);if(!a)return;
   let t="";try{t=HOW_[r.k]()}catch(e){}if(t)a.textContent+=(a.textContent?"　｜ 計算：":"計算：")+t})};

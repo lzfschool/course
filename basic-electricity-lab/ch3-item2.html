@@ -171,7 +171,7 @@ footer{font-size:12.5px;color:var(--muted)}
     </div>
     <div class="steps" id="steps"></div>
     <div class="formula" id="formula"></div>
-    <p class="hint" style="margin:0">判斷技巧：並聯後的電阻一定比並聯中最小的電阻還小。例如與 2.2Ω 並聯的結果，會比 2.2Ω 小或接近 2.2Ω。</p>
+    <p class="hint" style="margin:0">判斷技巧：並聯後的電阻一定比並聯中最小的電阻還小。例如與 2.7kΩ 並聯的結果，會比 2.7kΩ 小或接近 2.7kΩ。</p>
   </section>
 
   <section class="panel sheet" aria-label="學習單">
@@ -194,12 +194,12 @@ footer{font-size:12.5px;color:var(--muted)}
 (()=>{
 const $=s=>document.querySelector(s);
 const NS="http://www.w3.org/2000/svg";
-const BOOK={R1:4.7,R2:4.7,R3:4.7,R4:2.2,R5:2.2,R6:2.2};
+const BOOK={R1:2200,R2:4700,R3:3300,R4:5600,R5:3900,R6:2700};
 const nominal={...BOOK};
 let actual={...BOOK};
 const LEAD=0.3;
-const st={range:"R200",red:"a",black:"b",short:false,lead:true,rel:0,tol:true,stage:0,view:"sch"};
-const E12=[];[1,10,100].forEach(m=>[1,1.2,1.5,1.8,2.2,2.7,3.3,3.9,4.7,5.6,6.8,8.2].forEach(v=>E12.push(Math.round(v*m*10)/10)));E12.push(1000);
+const st={range:"R20k",red:"a",black:"b",short:false,lead:true,rel:0,tol:true,stage:0,view:"sch"};
+const E12=[];[1,10,100,1000,10000].forEach(m=>[1,1.2,1.5,1.8,2.2,2.7,3.3,3.9,4.7,5.6,6.8,8.2].forEach(v=>E12.push(Math.round(v*m*10)/10)));E12.push(100000);
 const ohmTxt=v=>v>=1000?(v/1000)+"kΩ":(v<10?v.toFixed(1):String(v))+"Ω";
 
 /* ---------- 計算 ---------- */
@@ -324,6 +324,7 @@ const RANGES=[
   {id:"R200",type:"ohm",label:"200Ω",full:199.9,k:1,unit:"Ω",dec:1},
   {id:"R2k",type:"ohm",label:"2kΩ",full:1.999,k:1e-3,unit:"kΩ",dec:3},
   {id:"R20k",type:"ohm",label:"20kΩ",full:19.99,k:1e-3,unit:"kΩ",dec:2},
+  {id:"R200k",type:"ohm",label:"200kΩ",full:199.9,k:1e-3,unit:"kΩ",dec:1},
   {id:"OFF",type:"off",label:"OFF"}];
 const R=()=>RANGES.find(r=>r.id===st.range);
 function buildDial(){
@@ -420,14 +421,14 @@ function resChanged(info){reroll();buildSheet();fillAns();buildLegend();st._info
 let SHEET;
 function makeSheet(){const n=nominal,o=ohmTxt,s=()=>stages(nominal);SHEET=[
   {sec:"1. 判斷總電阻（不計算，先估計）"},
-  {k:"jRT",label:"依電路排列判斷 RT 約為",unit:"Ω",type:"calc",tol:0.05,exp:()=>s().s5},
+  {k:"jRT",label:"依電路排列判斷 RT 約為",unit:"kΩ",type:"calc",tol:0.05,exp:()=>s().s5/1000},
   {sec:"2. 計算總電阻 RT"},
-  {k:"c1",label:`R1 + R4 = ${o(n.R1)} + ${o(n.R4)}`,unit:"Ω",type:"calc",exp:()=>s().s1},
-  {k:"c2",label:`R5 // (R1 + R4) = ${o(n.R5)} // (${o(n.R1)} + ${o(n.R4)})`,unit:"Ω",type:"calc",exp:()=>s().s2},
-  {k:"c3",label:`R6 // {R2 + [R5 // (R1 + R4)]}`,unit:"Ω",type:"calc",exp:()=>s().s4},
-  {k:"c4",label:`RT = R3 + {…} = ${o(n.R3)} + {…}`,unit:"Ω",type:"calc",exp:()=>s().s5},
-  {sec:"3. 量測總電阻（數位電表 200Ω 檔，量 a、b 兩端）"},
-  {k:"mRT",label:"電表顯示電阻值",unit:"Ω",type:"meas",exp:()=>rBetween(actual,"a","b")},
+  {k:"c1",label:`R1 + R4 = ${o(n.R1)} + ${o(n.R4)}`,unit:"kΩ",type:"calc",exp:()=>s().s1/1000},
+  {k:"c2",label:`R5 // (R1 + R4) = ${o(n.R5)} // (${o(n.R1)} + ${o(n.R4)})`,unit:"kΩ",type:"calc",exp:()=>s().s2/1000},
+  {k:"c3",label:`R6 // {R2 + [R5 // (R1 + R4)]}`,unit:"kΩ",type:"calc",exp:()=>s().s4/1000},
+  {k:"c4",label:`RT = R3 + {…} = ${o(n.R3)} + {…}`,unit:"kΩ",type:"calc",exp:()=>s().s5/1000},
+  {sec:"3. 量測總電阻（數位電表 20kΩ 檔，量 a、b 兩端）"},
+  {k:"mRT",label:"電表顯示電阻值",unit:"kΩ",type:"meas",exp:()=>rBetween(actual,"a","b")/1000},
   {sec:"4. 比較"},
   {k:"q1",label:"判斷值、計算值與量測值是否相近？",type:"yn"}];}
 const KEY="ws2-sheet";
@@ -490,13 +491,14 @@ $("#resetBtn").addEventListener("click",()=>{
 
 /* 參考答案計算過程 */
 const F_=(v,d=2)=>(+v).toFixed(d),P_=(a,b)=>a*b/(a+b);
+const K_=v=>v>=1000?F_(v/1000,3)+"kΩ":F_(v,1)+"Ω";
 const HOW_={
-  jRT:()=>{const s=stages(nominal);return `RT 一定大於 R3（${nominal.R3}Ω），後面並聯部分小於 R6（${nominal.R6}Ω）；計算值 ${F_(s.s5,3)}Ω`},
-  c1:()=>{const n=nominal,s=stages(n);return `${n.R1}+${n.R4} = ${F_(s.s1,3)}Ω`},
-  c2:()=>{const n=nominal,s=stages(n);return `${n.R5}×${F_(s.s1,3)}÷(${n.R5}+${F_(s.s1,3)}) = ${F_(s.s2,3)}Ω`},
-  c3:()=>{const n=nominal,s=stages(n);return `R2+上式 = ${n.R2}+${F_(s.s2,3)} = ${F_(s.s3,3)}Ω；${n.R6}×${F_(s.s3,3)}÷(${n.R6}+${F_(s.s3,3)}) = ${F_(s.s4,3)}Ω`},
-  c4:()=>{const n=nominal,s=stages(n);return `${n.R3}+${F_(s.s4,3)} = ${F_(s.s5,3)}Ω`},
-  mRT:()=>`理論值 ${F_(stages(nominal).s5,3)}Ω（未短接歸零會多約 0.3Ω）`};
+  jRT:()=>{const s=stages(nominal);return `RT 一定大於 R3（${K_(nominal.R3)}），後面並聯部分小於 R6（${K_(nominal.R6)}）；計算值 ${K_(s.s5)}`},
+  c1:()=>{const n=nominal,s=stages(n);return `${K_(n.R1)}+${K_(n.R4)} = ${K_(s.s1)}`},
+  c2:()=>{const n=nominal,s=stages(n);return `${K_(n.R5)}×${K_(s.s1)}÷(${K_(n.R5)}+${K_(s.s1)}) = ${K_(s.s2)}`},
+  c3:()=>{const n=nominal,s=stages(n);return `R2+上式 = ${K_(n.R2)}+${K_(s.s2)} = ${K_(s.s3)}；${K_(n.R6)}×${K_(s.s3)}÷(${K_(n.R6)}+${K_(s.s3)}) = ${K_(s.s4)}`},
+  c4:()=>{const n=nominal,s=stages(n);return `${K_(n.R3)}+${K_(s.s4)} = ${K_(s.s5)}`},
+  mRT:()=>`理論值 ${K_(stages(nominal).s5)}`};
 const _fillAns=fillAns;
 fillAns=function(){_fillAns();SHEET.forEach(r=>{if(!r.k||!HOW_[r.k])return;const a=document.getElementById("an-"+r.k);if(!a)return;
   let t="";try{t=HOW_[r.k]()}catch(e){}if(t)a.textContent+=(a.textContent?"　｜ 計算：":"計算：")+t})};
