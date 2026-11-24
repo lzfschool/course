@@ -301,16 +301,16 @@ function drawBB(){
   "abcdefghij".split("").forEach(r=>{e("text",{x:90,y:Y(r)+3,fill:"#8a8a80","font-size":9,"text-anchor":"middle","font-family":"IBM Plex Mono,monospace"}).textContent=r});
   // 化簡框（麵包板也標示）
   // 依教師版圖 3-7 麵包板：a 在上方＋軌，R3 由軌道直插下來，R6、R5、R4 跨過中間溝槽
-  const RS=[["R3",5,"p",5,"b"],["R2",5,"c",11,"c"],["R1",11,"b",17,"b"],["R6",5,"e",5,"i"],["R5",11,"e",11,"i"],["R4",17,"e",17,"i"]];
+  const RS=[["R3",5,"p",5,"a"],["R2",5,"c",11,"c"],["R1",11,"b",17,"b"],["R6",5,"e",5,"i"],["R5",11,"e",11,"i"],["R4",17,"e",17,"i"]];
   RS.forEach(([k,c1,r1,c2,r2])=>colorRes(B,X(c1),Y(r1),X(c2),Y(r2),nominal[k],k));
-  RS.forEach(([k,c1,r1,c2,r2])=>{const vert=c1===c2;e("text",{x:vert?X(c1)+13:(X(c1)+X(c2))/2,y:vert?(Y(r1)+Y(r2))/2+4:Y(r1)-14,"font-size":11,"font-weight":700,fill:"#1f7a5a","text-anchor":vert?"start":"middle"}).textContent=k});
+  RS.forEach(([k,c1,r1,c2,r2])=>{const vert=c1===c2;e("text",{x:vert?X(c1)+13:(X(c1)+X(c2))/2,y:vert?(Y(r1)+Y(r2))/2+4:(k==="R2"?Y(r1)+20:Y(r1)-14),"font-size":11,"font-weight":700,fill:"#1f7a5a","text-anchor":vert?"start":"middle"}).textContent=k});
   function jumper(c1,r1,c2,r2){
     const x1=X(c1),y1=Y(r1),x2=X(c2),y2=Y(r2),mx=(x1+x2)/2,my=(y1+y2)/2,vert=x1===x2;
     e("path",{d:`M${x1},${y1} L${x2},${y2}`,fill:"none",stroke:"#7b3fb5","stroke-width":3.2,"stroke-linecap":"round"});
     [[x1,y1],[x2,y2]].forEach(([x,y])=>e("circle",{cx:x,cy:y,r:3,fill:"#7b3fb5"}));
   }
   jumper(5,"j",5,"n2");jumper(11,"j",11,"n2");jumper(17,"j",17,"n2");
-  [["a",4,"p"],["c",4,"b"],["d",12,"c"],["e",18,"b"],["b",4,"n2"]].forEach(([id,c,r])=>{
+  [["a",4,"p"],["c",5,"b"],["d",11,"a"],["e",17,"a"],["b",4,"n2"]].forEach(([id,c,r])=>{
     const x=X(c),y=Y(r);
     const hit=e("circle",{cx:x,cy:y,r:11,class:"node-hit",tabindex:0,role:"button","aria-label":"麵包板節點 "+id});
     const ring=st.red===id?"#d32f2f":st.black===id?"#222":null;
