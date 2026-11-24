@@ -123,7 +123,7 @@ footer{font-size:12.5px;color:var(--muted)}
           <button class="btn" id="tabBB" type="button" role="tab" aria-selected="false">麵包板接線圖</button>
         </div>
       </div>
-      <div class="svgbox" id="schBox"><svg class="circuit" id="circ" viewBox="0 0 640 300" role="img" aria-label="梯形串並聯電阻網路"></svg></div>
+      <div class="svgbox" id="schBox"><svg class="circuit" id="circ" viewBox="-70 0 710 300" role="img" aria-label="梯形串並聯電阻網路（圖 3-7）"></svg></div>
       <div class="svgbox" id="bbBox" hidden>
         <svg class="circuit" id="bb" viewBox="0 0 650 360" role="img" aria-label="麵包板接線圖"></svg>
         <p class="hint" style="margin:6px 0 0">上排 R3、R2、R1 依序串接；R6、R5、R4 從上半部跨過中間溝槽到下半部，再用紫色跳線接到下方藍色軌，藍色軌就是 b 端。</p>
@@ -251,7 +251,7 @@ function drawSch(){
   if(st.stage>0){
     const [x0]=BOXES[st.stage],v=sg["s"+st.stage];
     el("rect",{x:x0,y:26,width:602-x0,height:240,rx:12,class:"eqbox"},S);
-    el("text",{x:x0+8,y:290,class:"eqlbl"},S).textContent=`${st.stage===5?"RT":"等效"} = ${v.toFixed(3)} Ω`;
+    el("text",{x:x0+8,y:290,class:"eqlbl"},S).textContent=`${st.stage===5?"RT":"等效"} = ${v>=1000?(v/1000).toFixed(3)+" kΩ":v.toFixed(3)+" Ω"}`;
   }
   [["M40,60 L90,60"],["M190,60 L250,60"],["M350,60 L410,60"],["M510,60 L540,60"],["M540,240 L40,240"],["M220,60 L220,90"],["M220,210 L220,240"],["M380,60 L380,90"],["M380,210 L380,240"],["M540,60 L540,90"],["M540,210 L540,240"]]
     .forEach(([d])=>el("path",{d,class:"wire"},S));
@@ -262,13 +262,22 @@ function drawSch(){
     el("text",{x:lx,y:ly-(anc==="middle"?12:4),class:"rname","text-anchor":anc},S).textContent=k;
     el("text",{x:lx,y:ly+(anc==="middle"?2:14),class:"lbl","text-anchor":anc},S).textContent=ohmTxt(nominal[k]);
   });
-  const NODES=[["a",40,60,-14,6,true],["b",40,240,-14,6,true],["c",220,60,0,-12,false],["d",380,60,0,-12,false],["e",540,60,0,-12,false]];
+  {const g=el("g",{opacity:.5},S),BX=-30,my=150;
+    el("path",{d:`M34,60 L${BX},60 L${BX},${my-8} M${BX},${my+8} L${BX},240 L34,240`,fill:"none",stroke:"var(--wire)","stroke-width":2,"stroke-dasharray":"6 4"},g);
+    el("line",{x1:BX-16,y1:my-8,x2:BX+16,y2:my-8,stroke:"var(--wire)","stroke-width":2.6},g);
+    el("line",{x1:BX-8,y1:my+8,x2:BX+8,y2:my+8,stroke:"var(--wire)","stroke-width":5},g);
+    el("text",{x:BX-22,y:my+5,class:"lbl","text-anchor":"end"},g).textContent="9V";
+    el("text",{x:BX+12,y:my-12,class:"lbl"},g).textContent="+";
+    el("text",{x:BX+12,y:my+24,class:"lbl"},g).textContent="−";
+    el("text",{x:BX,y:282,class:"lbl","text-anchor":"middle",style:"font-size:11px"},S).textContent="（量電阻前已移除 9V）";}
+  el("path",{d:"M52,150 L84,150 m-7,-5 l7,5 l-7,5",fill:"none",stroke:"var(--accent)","stroke-width":1.6},S);
+  el("text",{x:56,y:142,class:"rname"},S).innerHTML='R<tspan font-size="10" dy="4">T</tspan>';
+  const NODES=[["a",40,60,6,-12,true],["b",40,240,6,28,true],["c",220,60,0,-12,false],["d",380,60,0,-12,false],["e",540,60,0,-12,false]];
   NODES.forEach(([id,x,y,dx,dy,term])=>{
     el("circle",{cx:x,cy:y,r:term?6:5,class:term?"term":"node"},S);
     const hit=el("circle",{cx:x,cy:y,r:16,class:"node-hit",tabindex:0,role:"button","aria-label":"節點 "+id},S);
     el("circle",{cx:x,cy:y,r:11,class:st.red===id?"ring red":st.black===id?"ring black":"ring"},S);
     if(term)el("text",{x:x+dx,y:y+dy,class:"nodelbl","text-anchor":"end"},S).textContent=id;
-    else el("text",{x:x-14,y:y+dy+2,class:"nodelbl","text-anchor":"end","font-size":14,style:"font-size:14px;opacity:.75"},S).textContent=id;
     if(st.red===id||st.black===id)el("text",{x:x+(term?-6:-6),y:y+(id==="b"?-14:24),class:"probe-tag",fill:st.red===id?"var(--red)":"var(--black)","text-anchor":"middle"},S).textContent=st.red===id?"紅棒":"黑棒";
     const go=()=>clickNode(id);
     hit.addEventListener("click",go);hit.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go()}});
@@ -413,7 +422,7 @@ function buildLegend(){
   const seen=[...new Set(Object.values(nominal))].sort((a,b)=>a-b);
   $("#ccLegend").innerHTML="";
   seen.forEach((v,i)=>{const s=document.createElement("span");s.textContent=(i?"":"色碼：")+`${ohmTxt(v)} = ${ccName(v)}`;$("#ccLegend").appendChild(s)});
-  const h=document.createElement("span");h.textContent="（第三環金色代表 ×0.1）";$("#ccLegend").appendChild(h);
+  if(seen.some(v=>v<10)){const h=document.createElement("span");h.textContent="（第三環金色代表 ×0.1）";$("#ccLegend").appendChild(h)}
 }
 function resChanged(info){reroll();buildSheet();fillAns();buildLegend();st._info=info;update()}
 
