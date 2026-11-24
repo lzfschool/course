@@ -131,7 +131,7 @@ footer{font-size:12.5px;color:var(--muted)}
       <div class="svgbox" id="schBox"><svg class="circuit" id="circ" viewBox="0 0 640 330" role="img" aria-label="惠斯登電橋電路"></svg></div>
       <div class="svgbox" id="bbBox" hidden>
         <svg class="circuit" id="bb" viewBox="0 0 650 400" role="img" aria-label="麵包板接線圖"></svg>
-        <p class="hint" style="margin:6px 0 0">依教師版圖 3-11 排列：R1 由＋軌直插到第 4 行（a）；上半部 R2 接到 c、R3 接到 b；第 4 行跨溝槽到下半部接 R4 到 d，d 再用跳線接到 VR，VR 經第 19 行回到 b。c、d 之間接電壓表（或改用 LED、檢流計）。</p>
+        <p class="hint" style="margin:6px 0 0">依教師版圖 3-11 排列：R1 由＋軌直插到第 4 行（a）；上半部 R2 接到 c、R3 接到 b；第 4 行跨溝槽到下半部接 R4 到 d，d 再用跳線接到 VR（第 16 行），VR 中間腳經第 19 行回到 b。c、d 之間接電壓表（或改用 LED、檢流計）。</p>
       </div>
       <div class="legend" id="ccLegend"></div>
       <div>
@@ -430,44 +430,49 @@ function drawBB(sol){
   colorRes(B,X(4),Y("p"),X(4),Y("a"),nominal.R1,"R1");
   colorRes(B,X(4),Y("d"),X(10),Y("d"),nominal.R2,"R2");
   colorRes(B,X(10),Y("c"),X(16),Y("c"),nominal.R3,"R3");
-  jumper(10,"a",12,"a","#555",0);
   jumper(16,"b",19,"b","#555",0);
   jumper(4,"e",4,"f","#555",0);jumper(19,"e",19,"f","#555",0);
   colorRes(B,X(4),Y("g"),X(10),Y("g"),nominal.R4,"R4");
-  jumper(10,"h",12,"h","#555",0);
   jumper(16,"a",16,"n","#333",0);   // b 接電源負端（上方藍軌）
   // c、d 之間的指示器
   if(st.ind==="led"){
+    jumper(10,"a",12,"a","#555",0);jumper(10,"i",12,"i","#555",0);
     bbLed(10,"#2ecc40",sol.led2/0.004,false,"(G)");
     bbLed(12,"#ff3b30",sol.led1/0.004,true,"(R)");
   }else if(st.ind==="v"){
-    const vx=X(14),vy=(Y("e")+Y("f"))/2;
-    e("path",{d:`M${X(12)},${Y("a")} C${X(13)},${Y("a")-14} ${vx},${vy-40} ${vx},${vy-12}`,fill:"none",stroke:"#d32f2f","stroke-width":2.4});
-    e("path",{d:`M${X(12)},${Y("h")} C${X(13)},${Y("h")+10} ${vx},${vy+40} ${vx},${vy+12}`,fill:"none",stroke:"#222","stroke-width":2.4});
+    // 電壓表：紅棒接 c、黑棒接 d（同教師版的表棒位置）
+    const vx=X(13),vy=(Y("e")+Y("f"))/2,cx=X(10),cy=Y("b"),dx=X(10),dy=Y("h");
+    e("path",{d:`M${cx},${cy} C${cx+30},${cy} ${vx},${vy-36} ${vx},${vy-12}`,fill:"none",stroke:"#d32f2f","stroke-width":2.4});
+    e("path",{d:`M${dx},${dy} C${dx+30},${dy} ${vx},${vy+36} ${vx},${vy+12}`,fill:"none",stroke:"#222","stroke-width":2.4});
     e("circle",{cx:vx,cy:vy,r:12,fill:"#fff",stroke:"#e6b92e","stroke-width":3});
     e("text",{x:vx,y:vy+4.5,"font-size":12,"font-weight":700,"text-anchor":"middle",fill:"#222"}).textContent="V";
     const vv=st.power?sol.Vc-sol.Vd:0;
-    e("text",{x:vx+18,y:vy+4,"font-size":11,"font-weight":700,"font-family":"IBM Plex Mono,monospace",fill:"#1b2417"}).textContent=(vv<-0.0005?"−":"")+Math.abs(vv).toFixed(3)+" V";
-  }else e("text",{x:X(11),y:Y("f")-10,"font-size":10,fill:"#8a8a80","text-anchor":"middle"}).textContent="（改接檢流計 G）";
-  if(!st.vrOut){
-    jumper(10,"j",17,"j","#555",0);
-    const py=Y("i")+34;
-    e("path",{d:`M${X(17)},${Y("i")} L${X(17)},${py-14} M${X(18)},${Y("i")} L${X(18)},${py-14} M${X(19)},${Y("i")} L${X(19)},${py-14}`,stroke:"#9a9a92","stroke-width":1.6});
-    e("rect",{x:X(17)-10,y:py-16,width:X(19)-X(17)+20,height:30,rx:4,fill:"#2f5fa8",stroke:"#1c3d73"});
-    const a=(-135+270*st.vr/st.vrMax)*Math.PI/180;
-    e("circle",{cx:X(18),cy:py-1,r:9,fill:"#e8e8e0",stroke:"#777"});
-    e("line",{x1:X(18),y1:py-1,x2:X(18)+8*Math.sin(a),y2:py-1-8*Math.cos(a),stroke:"#333","stroke-width":2});
-    e("text",{x:X(19)+14,y:py+4,"font-size":11,"font-weight":700,fill:"#1f7a5a"}).textContent="VR";
-    jumper(18,"j",19,"j","#555",0);
+    e("rect",{x:vx+16,y:vy-10,width:70,height:20,rx:3,fill:"#c7d3b4",stroke:"#2b2b2b","stroke-width":1.5});
+    e("text",{x:vx+82,y:vy+5,"font-size":12,"font-weight":700,"font-family":"IBM Plex Mono,monospace",fill:"#1b2417","text-anchor":"end"}).textContent=(vv<-0.0005?"−":"")+Math.abs(vv).toFixed(3)+" V";
   }else{
-    e("text",{x:X(18),y:Y("i"),"font-size":11,fill:"#8a8a80","text-anchor":"middle"}).textContent="VR 已拆下";
+    jumper(10,"a",12,"a","#555",0);jumper(10,"i",12,"i","#555",0);
+    e("text",{x:X(11),y:Y("f")-10,"font-size":10,fill:"#8a8a80","text-anchor":"middle"}).textContent="（改接檢流計 G）";
+  }
+  // 可變電阻：三支腳插在第 16、17、18 行的 i 列，本體在腳的上方；d 經 j 列跳線接到第 16 行，中間腳（第 17 行）經跳線接到第 19 行回到 b
+  if(!st.vrOut){
+    jumper(10,"j",16,"j","#555",0);
+    jumper(17,"j",19,"j","#555",0);
+    const top=Y("f")+2,bot=Y("i")-12;
+    [16,17,18].forEach(c=>e("path",{d:`M${X(c)},${bot} L${X(c)},${Y("i")}`,stroke:"#9a9a92","stroke-width":2}));
+    e("rect",{x:X(16)-11,y:top,width:X(18)-X(16)+22,height:bot-top,rx:5,fill:"#2f5fa8",stroke:"#1c3d73"});
+    const a=(-135+270*st.vr/st.vrMax)*Math.PI/180,kx=X(17),ky=(top+bot)/2;
+    e("circle",{cx:kx,cy:ky,r:11,fill:"#e8e8e0",stroke:"#777"});
+    e("line",{x1:kx,y1:ky,x2:kx+9*Math.sin(a),y2:ky-9*Math.cos(a),stroke:"#333","stroke-width":2});
+    e("text",{x:X(18)+16,y:ky+4,"font-size":11,"font-weight":700,fill:"#1f7a5a"}).textContent="VR";
+  }else{
+    e("text",{x:X(17),y:Y("h"),"font-size":11,fill:"#8a8a80","text-anchor":"middle"}).textContent="VR 已拆下";
     e("rect",{x:X(17)-30,y:364,width:60,height:24,rx:4,fill:"#2f5fa8",stroke:"#1c3d73"});
     e("text",{x:X(17)-66,y:381,"font-size":11,fill:"var(--muted)","text-anchor":"end"}).textContent="拆下的 VR →";
   }
   // 元件標籤
   [["R1",4,"n",14],["R2",7,"d",0],["R3",13,"c",0],["R4",7,"g",0]].forEach(([t,c,r,dx])=>e("text",{x:X(c)+dx,y:Y(r)-(dx?-14:12),"font-size":11,"font-weight":700,fill:"#1f7a5a","text-anchor":dx?"start":"middle"}).textContent=t);
   // 量測點（位置同教師版：a、c、b、d）
-  const pts=[["a",4,"c"],["b",16,"d"],["c",10,"b"],["d",10,"i"]];
+  const pts=[["a",4,"c"],["b",16,"d"],["c",10,"b"],["d",10,"h"]];
   if(st.vrOut)pts.push(["v1",X(17)-24,null],["v2",X(17)+24,null]);
   pts.forEach(([id,c,r])=>{
     const x=r?X(c):c,y=r?Y(r):376;
