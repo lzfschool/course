@@ -125,6 +125,7 @@ footer{font-size:12.5px;color:var(--muted)}
         <button class="btn" id="tabBB" type="button" role="tab" aria-selected="false">麵包板接線圖</button>
         <span class="hint" style="margin-left:auto">c、d 之間的指示器：</span>
         <button class="btn on" id="indV" type="button">電壓表 V</button>
+        <button class="btn" id="vFlip" type="button" aria-pressed="false">電壓表紅黑對調</button>
         <button class="btn" id="indLED" type="button">LED（課本）</button>
         <button class="btn" id="indG" type="button">檢流計 G</button>
       </div>
@@ -155,6 +156,7 @@ footer{font-size:12.5px;color:var(--muted)}
       <div class="msg" id="msg" role="status"></div>
       <div class="dial" id="dial" role="group" aria-label="檔位旋鈕"></div>
       <div class="row">
+        <button class="btn" id="swapBtn" type="button">紅黑棒對調</button>
         <button class="btn" id="clearProbe" type="button">移開探棒</button>
         <button class="btn" id="logBtn" type="button">記錄此讀值</button>
       </div>
@@ -213,7 +215,7 @@ const E=9, VF=1.8, RLED=10, RG=100;
 const BOOK={R1:6800,R2:22000,R3:15000,R4:33000};
 const nominal={...BOOK};
 const actual={};
-const st={power:false,vrMax:100000,vr:100000,vrOut:false,ind:"v",range:"V20",red:null,black:null,showVR:false,tol:true};
+const st={vflip:false,power:false,vrMax:100000,vr:100000,vrOut:false,ind:"v",range:"V20",red:null,black:null,showVR:false,tol:true};
 function reroll(){for(const k in nominal)actual[k]=st.tol?nominal[k]*(1+(Math.random()*2-1)*0.05):nominal[k]}
 reroll();
 const E12=[];[10,100,1000,10000,100000].forEach(m=>[10,12,15,18,22,27,33,39,47,56,68,82].forEach(v=>E12.push(v*m/10)));E12.push(1000000);
@@ -358,9 +360,9 @@ function drawSch(sol){
     w("M320,70 L320,130");w("M320,170 L320,230");
     el("circle",{cx:320,cy:150,r:20,fill:"var(--panel)",stroke:"var(--wire)","stroke-width":2.2},S);
     el("text",{x:320,y:156,class:"lbl","text-anchor":"middle",style:"font-weight:700;font-size:16px"},S).textContent="V";
-    el("text",{x:334,y:118,class:"probe-tag",fill:"var(--red)"},S).textContent="+";
-    el("text",{x:334,y:190,class:"probe-tag",fill:"var(--black)"},S).textContent="−";
-    const vv=st.power&&!st.vrOut?sol.Vc-sol.Vd:(st.power?sol.Vc-sol.Vd:0);
+    el("text",{x:334,y:118,class:"probe-tag",fill:st.vflip?"var(--black)":"var(--red)"},S).textContent=st.vflip?"−":"+";
+    el("text",{x:334,y:190,class:"probe-tag",fill:st.vflip?"var(--red)":"var(--black)"},S).textContent=st.vflip?"+":"−";
+    const vv=(st.vflip?-1:1)*(st.power?sol.Vc-sol.Vd:0);
     el("rect",{x:348,y:136,width:84,height:28,rx:4,fill:"#c7d3b4",stroke:"#2b2b2b","stroke-width":2},S);
     el("text",{x:426,y:156,"text-anchor":"end","font-family":"IBM Plex Mono,monospace","font-size":15,"font-weight":600,fill:"#1b2417"},S).textContent=(vv<-0.0005?"−":"")+Math.abs(vv).toFixed(3)+" V";
   }else{
@@ -441,11 +443,11 @@ function drawBB(sol){
   }else if(st.ind==="v"){
     // 電壓表：紅棒接 c、黑棒接 d（同教師版的表棒位置）
     const vx=X(13),vy=(Y("e")+Y("f"))/2,cx=X(10),cy=Y("b"),dx=X(10),dy=Y("h");
-    e("path",{d:`M${cx},${cy} C${cx+30},${cy} ${vx},${vy-36} ${vx},${vy-12}`,fill:"none",stroke:"#d32f2f","stroke-width":2.4});
-    e("path",{d:`M${dx},${dy} C${dx+30},${dy} ${vx},${vy+36} ${vx},${vy+12}`,fill:"none",stroke:"#222","stroke-width":2.4});
+    e("path",{d:`M${cx},${cy} C${cx+30},${cy} ${vx},${vy-36} ${vx},${vy-12}`,fill:"none",stroke:st.vflip?"#222":"#d32f2f","stroke-width":2.4});
+    e("path",{d:`M${dx},${dy} C${dx+30},${dy} ${vx},${vy+36} ${vx},${vy+12}`,fill:"none",stroke:st.vflip?"#d32f2f":"#222","stroke-width":2.4});
     e("circle",{cx:vx,cy:vy,r:12,fill:"#fff",stroke:"#e6b92e","stroke-width":3});
     e("text",{x:vx,y:vy+4.5,"font-size":12,"font-weight":700,"text-anchor":"middle",fill:"#222"}).textContent="V";
-    const vv=st.power?sol.Vc-sol.Vd:0;
+    const vv=(st.vflip?-1:1)*(st.power?sol.Vc-sol.Vd:0);
     e("rect",{x:vx+16,y:vy-10,width:70,height:20,rx:3,fill:"#c7d3b4",stroke:"#2b2b2b","stroke-width":1.5});
     e("text",{x:vx+82,y:vy+5,"font-size":12,"font-weight":700,"font-family":"IBM Plex Mono,monospace",fill:"#1b2417","text-anchor":"end"}).textContent=(vv<-0.0005?"−":"")+Math.abs(vv).toFixed(3)+" V";
   }else{
@@ -558,6 +560,7 @@ function update(){
   $("#aOL").className=o.ol?"":"dim";
   $("#dSign").textContent=o.sign;$("#dVal").textContent=r.type==="off"?"":o.digits;$("#dUnit").textContent=r.type==="off"?"":o.unit;
   const m=$("#msg");m.textContent=o.msg;m.className="msg "+(o.lvl||"");
+  $("#vFlip").classList.toggle("on",st.vflip);$("#vFlip").setAttribute("aria-pressed",st.vflip);$("#vFlip").hidden=st.ind!=="v";
   $("#pwrBtn").textContent=st.power?"移開電源":"接上電源";$("#pwrBtn").classList.toggle("on",st.power);
   $("#vrOutBtn").textContent=st.vrOut?"裝回 VR":"拆下 VR 量電阻";
   $("#vr").value=st.vr;$("#vrVal").hidden=!st.showVR;$("#vrVal").textContent=`VR = ${st.vr} Ω（平衡點 ≈ ${vrBal().toFixed(0)} Ω）`;
@@ -652,6 +655,8 @@ $("#vrOutBtn").addEventListener("click",()=>{st.vrOut=!st.vrOut;st.red=st.black=
   if(st.vrOut){st._info="VR 已拆下，旋鈕位置不變。切到 Ω 檔，點拆下的 VR 兩端量電阻。"}update()});
 $("#showVR").addEventListener("change",e=>{st.showVR=e.target.checked;update()});
 $("#clearProbe").addEventListener("click",()=>{st.red=st.black=null;update()});
+$("#swapBtn").addEventListener("click",()=>{if(st.red&&st.black){[st.red,st.black]=[st.black,st.red]}else{st._info="先把兩支表棒都接好再對調。"}update()});
+$("#vFlip").addEventListener("click",()=>{st.vflip=!st.vflip;st._info=st.vflip?"c、d 間電壓表的紅黑棒已對調：紅棒接 d、黑棒接 c，顯示的是 Vdc。":"電壓表恢復紅棒接 c、黑棒接 d（顯示 Vcd）。";update()});
 $("#logBtn").addEventListener("click",()=>{const o=st._last;if(!o||!o.log){$("#msg").textContent="目前沒有有效讀值可記錄。";$("#msg").className="msg warn";return}
   const li=document.createElement("li");li.textContent=o.log;$("#log").prepend(li)});
 $("#checkBtn").addEventListener("click",check);
