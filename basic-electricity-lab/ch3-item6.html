@@ -611,6 +611,9 @@ QUICK.forEach(([lab,cfg])=>{const b=document.createElement("button");b.type="but
 function buildLegend(){
   const seen=[...new Set(Object.values(nominal))].sort((a,b)=>a-b);
   $("#ccLegend").innerHTML=seen.map((v,i)=>`<span>${i?"":"色碼："}${ohmTxt(v)} = ${ccName(v)}</span>`).join("")+`<span style="color:var(--short)">橘色線＝短路線</span>`;
+  {const n=nominal,o=ohmTxt,s=document.createElement("span");s.style.flexBasis="100%";s.style.color="var(--ink)";
+    s.textContent=`電路說明：電路與工作項目 5 相同——9V 經 R1（${o(n.R1)}）到 a、a 經 R2（${o(n.R2)}）到共同點；3V 經 R4（${o(n.R4)}）到 b、b 經 R3（${o(n.R3)}）到共同點；a、b 之間接負載 RL（${o(n.RL)}）。諾頓定理：從 a、b 兩端看進去，整個電路可以等效成一個電流源 IN 並聯電阻 RN。RN 的量法與戴維寧的 RTh 相同；IN 是把 a、b 直接短路（電流表跨接 a、b）時流過的電流。`;
+    $("#ccLegend").appendChild(s)}
 }
 function buildResSet(){
   const box=$("#resSet");box.innerHTML="";

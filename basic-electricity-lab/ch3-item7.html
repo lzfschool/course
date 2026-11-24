@@ -531,6 +531,9 @@ LOADS.forEach(v=>{const b=document.createElement("button");b.type="button";b.cla
 function buildLegend(){
   const seen=[...new Set([nominal.RS,...LOADS])].sort((a,b)=>a-b);
   $("#ccLegend").innerHTML=seen.map((v,i)=>`<span>${i?"":"色碼："}${ohmTxt(v)} = ${ccName(v)}</span>`).join("");
+  {const n=nominal,o=ohmTxt,s=document.createElement("span");s.style.flexBasis="100%";s.style.color="var(--ink)";
+    s.textContent=`電路說明：電源 E 串聯內阻 RS（${o(n.RS)}）後接到 a、b，a、b 之間接負載 RL。負載電壓 VL = E × RL ÷ (RS + RL)，負載功率 PL = VL² ÷ RL。RL 太小時電流大但電壓小，RL 太大時電壓大但電流小；當 RL = RS 時 PL 最大，Pm = E² ÷ (4 RS)。`;
+    $("#ccLegend").appendChild(s)}
 }
 function buildResSet(){
   const box=$("#resSet");box.innerHTML="";

@@ -585,6 +585,9 @@ QUICK.forEach(([lab,cfg])=>{const b=document.createElement("button");b.type="but
 function buildLegend(){
   const seen=[...new Set(Object.values(nominal))].sort((a,b)=>a-b);
   $("#ccLegend").innerHTML=seen.map((v,i)=>`<span>${i?"":"色碼："}${ohmTxt(v)} = ${ccName(v)}</span>`).join("")+`<span style="color:var(--short)">橘色線＝短路線</span>`;
+  {const n=nominal,o=ohmTxt,s=document.createElement("span");s.style.flexBasis="100%";s.style.color="var(--ink)";
+    s.textContent=`電路說明：9V 電源經 R1（${o(n.R1)}）到 a 點，a 點再經 R2（${o(n.R2)}）接到共同點；3V 電源經 R4（${o(n.R4)}）到 b 點，b 點再經 R3（${o(n.R3)}）接到共同點。a、b 之間接負載 RL（${o(n.RL)}）。戴維寧定理：從 a、b 兩端看進去，整個電路可以等效成一個電壓源 ETh 串聯電阻 RTh。取出 RL、把兩個電源換成短路線量 a、b 間電阻就是 RTh；接回電源量 a、b 開路電壓就是 ETh。`;
+    $("#ccLegend").appendChild(s)}
 }
 function buildResSet(){
   const box=$("#resSet");box.innerHTML="";

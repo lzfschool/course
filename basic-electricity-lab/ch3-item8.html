@@ -604,6 +604,9 @@ QUICK.forEach(([lab,cfg])=>{const b=document.createElement("button");b.type="but
 function buildLegend(){
   const seen=[...new Set(Object.values(nominal))].sort((a,b)=>a-b);
   $("#ccLegend").innerHTML=seen.map((v,i)=>`<span>${i?"":"色碼："}${ohmTxt(v)} = ${ccName(v)}</span>`).join("")+`<span style="color:var(--short)">橘色線＝短路線</span>`;
+  {const n=nominal,o=ohmTxt,s=document.createElement("span");s.style.flexBasis="100%";s.style.color="var(--ink)";
+    s.textContent=`電路說明：兩個 9V 電源各串聯一個電阻（${o(n.R1)}、${o(n.R2)}），兩條支路並聯到 a、b，a、b 之間接可變電阻 VR 當負載 RL。從 a、b 看進去的戴維寧等效電阻 RTh = ${o(n.R1)} // ${o(n.R2)}（兩電源短路時），等效電壓 ETh 是取出 RL 時 a、b 的開路電壓。把 RL 調到等於 RTh 時，負載得到最大功率 Pm = ETh² ÷ (4 RTh)。`;
+    $("#ccLegend").appendChild(s)}
 }
 function buildResSet(){
   const box=$("#resSet");box.innerHTML="";
