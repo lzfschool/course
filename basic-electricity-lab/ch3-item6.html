@@ -155,6 +155,7 @@ svg.eq{width:100%;max-width:460px;height:auto;display:block}
       <div class="msg" id="msg" role="status"></div>
       <div class="dial" id="dial" role="group" aria-label="檔位旋鈕"></div>
       <div class="row">
+        <button class="btn" id="swapBtn" type="button" aria-pressed="false">紅黑棒對調</button>
         <button class="btn" id="clearProbe" type="button">移開電表</button>
         <button class="btn" id="logBtn" type="button">記錄此讀值</button>
       </div>
@@ -237,7 +238,7 @@ const $=s=>document.querySelector(s);
 const NS="http://www.w3.org/2000/svg";
 const BOOK={R1:150,R2:100,RL:330,R3:150,R4:100};
 const nominal={...BOOK},actual={};
-const st={e1:true,e2:true,V1:9,V2:3,load:true,range:"R2k",red:null,black:null,brk:null,tol:true,showSum:false};
+const st={flip:false,e1:true,e2:true,V1:9,V2:3,load:true,range:"R2k",red:null,black:null,brk:null,tol:true,showSum:false};
 function reroll(){for(const k in nominal)actual[k]=st.tol?nominal[k]*(1+(Math.random()*2-1)*0.05):nominal[k]}
 reroll();
 const E12=[];[10,100,1000].forEach(m=>[10,12,15,18,22,27,33,39,47,56,68,82].forEach(v=>E12.push(v*m/10)));E12.push(10000);
@@ -326,8 +327,8 @@ function drawSch(){
     w(`M240,${T} L246,${T}`);
     if(st.brk==="L"&&isA){
       const a=el("g",{class:"ammeter"},S);el("circle",{cx:256,cy:T,r:13},a);el("text",{x:256,y:T+5,"text-anchor":"middle"},a).textContent="A";
-      el("text",{x:246,y:T+30,class:"probe-tag",fill:"var(--red)","text-anchor":"middle"},S).textContent="紅";
-      el("text",{x:268,y:T+30,class:"probe-tag",fill:"var(--black)","text-anchor":"middle"},S).textContent="黑";
+      el("text",{x:246,y:T+30,class:"probe-tag",fill:st.flip?"var(--black)":"var(--red)","text-anchor":"middle"},S).textContent=st.flip?"黑":"紅";
+      el("text",{x:268,y:T+30,class:"probe-tag",fill:st.flip?"var(--red)":"var(--black)","text-anchor":"middle"},S).textContent=st.flip?"紅":"黑";
     }else{
       w(`M246,${T} L266,${T}`);
       if(isA){
@@ -335,7 +336,7 @@ function drawSch(){
         el("circle",{cx:256,cy:T,r:9,class:"tgt"},b);
         el("path",{d:`M252,${T-4} L260,${T+4} M260,${T-4} L252,${T+4}`,class:"x"},b);
         el("title",{},b).textContent="取下 a 至 330Ω 的連接線，串入電表";
-        keyAct(b,()=>{st.brk="L";st.red=st.black=null;update()});
+        keyAct(b,()=>{st.brk="L";st.flip=false;st.red=st.black=null;update()});
       }
     }
     colorRes(S,266,T,420,T,nominal.RL,"RL");
@@ -435,8 +436,8 @@ function drawBB(){
     const x1=X(9),x2=X(11),y=Y("a"),mx=(x1+x2)/2;
     if(st.brk==="L"&&isA){
       const ay=y-16;
-      e("path",{d:`M${x1},${y} L${x1},${ay} L${mx-11},${ay}`,fill:"none",stroke:"#d32f2f","stroke-width":2.6});
-      e("path",{d:`M${mx+11},${ay} L${x2},${ay} L${x2},${y}`,fill:"none",stroke:"#222","stroke-width":2.6});
+      e("path",{d:`M${x1},${y} L${x1},${ay} L${mx-11},${ay}`,fill:"none",stroke:st.flip?"#222":"#d32f2f","stroke-width":2.6});
+      e("path",{d:`M${mx+11},${ay} L${x2},${ay} L${x2},${y}`,fill:"none",stroke:st.flip?"#d32f2f":"#222","stroke-width":2.6});
       e("circle",{cx:mx,cy:ay,r:11,fill:"#fff",stroke:"#e6b92e","stroke-width":3});
       e("text",{x:mx,y:ay+4.5,"font-size":12,"font-weight":700,"text-anchor":"middle",fill:"#222"}).textContent="A";
     }else{
@@ -445,7 +446,7 @@ function drawBB(){
         const g=e("g",{class:"brk",tabindex:0,role:"button","aria-label":"取下 a 至 330Ω 的跳線並串入電表"});
         el("circle",{cx:mx,cy:y-9,r:8,fill:"#fff",stroke:"#1f7a5a","stroke-width":1.6,"stroke-dasharray":"3 2"},g);
         el("path",{d:`M${mx-3.5},${y-12.5} L${mx+3.5},${y-5.5} M${mx+3.5},${y-12.5} L${mx-3.5},${y-5.5}`,stroke:"#1f7a5a","stroke-width":2},g);
-        keyAct(g,()=>{st.brk="L";st.red=st.black=null;update()});
+        keyAct(g,()=>{st.brk="L";st.flip=false;st.red=st.black=null;update()});
       }
     }
   }else{
@@ -512,7 +513,7 @@ function reading(sol){
     if(st.red){out.digits=(0).toFixed(r.dec);out.msg="再點黑棒位置。量短路電流：紅棒 a、黑棒 b。";return out}
     if(st.brk!=="L"){out.digits=(0).toFixed(r.dec);out.msg="量短路電流：取出 330Ω 後，紅棒點 a、黑棒點 b（電流表直接跨接 ab）。驗證 IL：接回 330Ω，點連接線上的 ✕ 串入電表。";return out}
     if(!st.load){out.digits=(0).toFixed(r.dec);out.msg="330Ω 已取出，沒有負載電流。";out.lvl="warn";return out}
-    const I=sol.IL*1000;Object.assign(out,show(r,I));
+    const I=(st.flip?-1:1)*sol.IL*1000;Object.assign(out,show(r,I));
     if(out.ol){out.msg=`超過 ${r.label} 檔！請立刻改用較大的電流檔。`;out.lvl="bad";return out}
     out.log=`IL = ${out.sign}${out.digits} mA　[${srcTxt()}，DCA ${r.label}]`;
     if(I<-1e-6)out.msg="讀值為負：電流實際上由 b 流向 a。",out.lvl="warn";
@@ -585,6 +586,8 @@ function update(){
   $("#aOL").className=o.ol?"":"dim";
   $("#dSign").textContent=o.sign;$("#dVal").textContent=r.type==="off"?"":o.digits;$("#dUnit").textContent=r.type==="off"?"":o.unit;
   const m=$("#msg");m.textContent=o.msg;m.className="msg "+(o.lvl||"");
+  if(st.flip&&R().type==="A"&&st.brk)m.textContent="【紅黑棒已對調，讀值正負相反】"+m.textContent;
+  $("#swapBtn").classList.toggle("on",st.flip);$("#swapBtn").setAttribute("aria-pressed",st.flip);
   [["e1Bat",st.e1],["e1Sh",!st.e1],["e2Bat",st.e2],["e2Sh",!st.e2],["ldOn",st.load],["ldOff",!st.load]].forEach(([id,on])=>{$("#"+id).classList.toggle("on",on);$("#"+id).setAttribute("aria-pressed",on)});
   const Rt=rTh(actual),In=iSC(actual,st.V1,st.V2),Ip=In*Rt/(Rt+actual.RL),Ia=solve(actual,st.V1,st.V2,true).IL,sh=st.showSum;
   $("#sR").textContent=sh?Rt.toFixed(1)+" Ω":"？";$("#sE").textContent=sh?(In*1000).toFixed(2)+" mA":"？";
@@ -602,7 +605,7 @@ const QUICK=[
   ["驗證：接回 330Ω、量 IL",{e1:true,e2:true,load:true,range:"A20",brk:"L",red:null,black:null}],
 ];
 QUICK.forEach(([lab,cfg])=>{const b=document.createElement("button");b.type="button";b.className="btn";b.textContent=lab;
-  b.addEventListener("click",()=>{Object.assign(st,cfg);buildDial();update()});$("#quick").appendChild(b)});
+  b.addEventListener("click",()=>{Object.assign(st,cfg);st.flip=false;buildDial();update()});$("#quick").appendChild(b)});
 
 /* ---------- 電阻設定 ---------- */
 function buildLegend(){
@@ -692,7 +695,12 @@ $("#e2V").addEventListener("change",e=>{st.V2=clampV(parseFloat(e.target.value))
 $("#showSum").addEventListener("change",e=>{st.showSum=e.target.checked;update()});
 $("#tolChk").addEventListener("change",e=>{st.tol=e.target.checked;reroll();fillAns();update()});
 $("#reroll").addEventListener("click",()=>{reroll();fillAns();st._info=st.tol?"已換上同標稱值的另一組電阻（實際值在 ±5% 內不同），請重新量測。":"目前使用理想電阻，勾選「±5% 誤差」後換組才會有差異。";update()});
-$("#clearProbe").addEventListener("click",()=>{st.red=st.black=null;st.brk=null;update()});
+$("#clearProbe").addEventListener("click",()=>{st.flip=false;st.red=st.black=null;st.brk=null;update()});
+$("#swapBtn").addEventListener("click",()=>{
+  if(R().type==="A"&&st.brk){st.flip=!st.flip}
+  else if(st.red&&st.black){[st.red,st.black]=[st.black,st.red]}
+  else{st._info="先把電表接上（電流檔串入或兩支表棒都接好）再對調。"}
+  update()});
 $("#logBtn").addEventListener("click",()=>{const o=st._last;if(!o||!o.log){$("#msg").textContent="目前沒有有效讀值可記錄。";$("#msg").className="msg warn";return}
   const li=document.createElement("li");li.textContent=o.log;$("#log").prepend(li)});
 $("#checkBtn").addEventListener("click",check);
