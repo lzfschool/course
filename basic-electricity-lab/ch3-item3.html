@@ -671,6 +671,9 @@ $("#resetBtn").addEventListener("click",()=>{
 function buildLegend(){
   const seen=[...new Set(Object.values(nominal))].sort((a,b)=>a-b);
   $("#ccLegend").innerHTML=seen.map((v,i)=>`<span>${i?"":"色碼："}${ohmTxt(v)} = ${ccName(v)}</span>`).join("")+`<span>VR = ${ohmTxt(st.vrMax)} 可變電阻（藍色）</span>`+"<span>(G) 綠色 LED、(R) 紅色 LED</span>";
+  {const n=nominal,o=ohmTxt,s=document.createElement("span");s.style.flexBasis="100%";s.style.color="var(--ink)";
+    s.textContent=`電路說明：R1（${o(n.R1)}）是限流電阻，由 9V 經 R1 送電到 a 點。a、b 之間有兩條臂：上臂 R2（${o(n.R2)}）—c—R3（${o(n.R3)}），下臂 R4（${o(n.R4)}）—d—VR（${o(st.vrMax)} 可變電阻）。c、d 之間接電壓表（或 LED、檢流計）比較兩點電位；調 VR 使 Vcd = 0 時電橋平衡，此時 R2 × VR = R3 × R4，所以 VR = R3 × R4 ÷ R2。`;
+    $("#ccLegend").appendChild(s)}
 }
 function buildResSet(){
   const box=$("#resSet");box.innerHTML="";
