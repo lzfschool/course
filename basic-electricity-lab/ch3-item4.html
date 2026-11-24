@@ -433,7 +433,7 @@ function drawBB(){
       e("path",{d:`M74,${yc+30} C${X(4)},${yc+30} ${X(6)},${yc} ${X(7)},${yc}`,fill:"none",stroke:"#555","stroke-width":3});
       e("path",{d:`M74,${yc+42} C${X(6)},${yc+42} ${X(10)},${yc+30} ${X(10)},${yc}`,fill:"none",stroke:"#222","stroke-width":3});
       [[X(7),yc],[X(10),yc]].forEach(([x,y])=>e("circle",{cx:x,cy:y,r:4,fill:"#222"}));
-      e("text",{x:X(8.5),y:yc+16,"font-size":12,"font-weight":700,fill:"#444","text-anchor":"middle"}).textContent="+ "+st.V2+"V −";
+      e("text",{x:X(8.5),y:Y("b")-3,"font-size":12,"font-weight":700,fill:"#444","text-anchor":"middle"}).textContent="+ "+st.V2+"V −";
     }else{
       jumper(7,"c",10,"c","#e08a00",10);
       e("text",{x:X(8.5),y:yc-14,"font-size":10,fill:"#b06a00","text-anchor":"middle"}).textContent="短路線";
@@ -447,7 +447,7 @@ function drawBB(){
   brkJumper("R",12,"p",12,"a",0);
   [["R1",5,"g",12],["R2",7,"n",12],["R3",10,"g",-12],["R4",12,"g",12]].forEach(([t,c,r,dx])=>e("text",{x:X(c)+dx,y:Y(r),"font-size":11,"font-weight":700,fill:"#1f7a5a","text-anchor":dx>0?"start":"end"}).textContent=t);
   // 量測點（位置同教師版：c、a 在＋軌，d 在第 5 行，b 在下方−軌）
-  [["a",9,"p"],["b",11,"n2"],["c",4,"p"],["d",5,"b"],["e",7,"d"],["f",10,"a"]].forEach(([id,c,r])=>{
+  [["a",9,"p"],["b",11,"n2"],["c",4,"p"],["d",5,"b"],["e",7,"e"],["f",10,"a"]].forEach(([id,c,r])=>{
     const x=X(c),y=Y(r);
     const hit=e("circle",{cx:x,cy:y,r:10,class:"node-hit",tabindex:0,role:"button","aria-label":"麵包板量測點 "+id});
     const ring=st.red===id?"#d32f2f":st.black===id?"#222":null;
