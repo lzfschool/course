@@ -316,8 +316,8 @@ function drawSch(){
   battV(S,90,T,B,st.e1,st.V1,false);
   w(`M90,${T} L110,${T}`);colorRes(S,110,T,220,T,nominal.R1,"R1");w(`M220,${T} L240,${T}`);
   colorRes(S,240,T,240,B,nominal.R2,"R2");
-  el("text",{x:165,y:T-18,class:"rname","text-anchor":"middle"},S).textContent="R1 "+ohmTxt(nominal.R1);
-  el("text",{x:256,y:162,class:"rname"},S).textContent="R2";el("text",{x:256,y:178,class:"lbl"},S).textContent=ohmTxt(nominal.R2);
+  el("text",{x:165,y:T-18,class:"lbl","text-anchor":"middle"},S).textContent=ohmTxt(nominal.R1);
+  el("text",{x:256,y:162,class:"rname"},S).textContent="";el("text",{x:256,y:178,class:"lbl"},S).textContent=ohmTxt(nominal.R2);
   // 負載 330Ω（含斷點）
   const isA=R().type==="A";
   if(st.load){
@@ -337,18 +337,16 @@ function drawSch(){
       }
     }
     colorRes(S,266,T,420,T,nominal.RL,"RL");
-    el("text",{x:343,y:T-18,class:"rname","text-anchor":"middle"},S).textContent="RL "+ohmTxt(nominal.RL);
-    el("path",{d:`M323,${T+26} l40,0 m-6,-4 l6,4 l-6,4`,stroke:"var(--cur)","stroke-width":1.6,fill:"none"},S);
-    el("text",{x:343,y:T+44,class:"cur","text-anchor":"middle"},S).textContent="IL";
+    el("text",{x:343,y:T-18,class:"lbl","text-anchor":"middle"},S).textContent=ohmTxt(nominal.RL);
   }else{
     w(`M240,${T} L262,${T}`);w(`M408,${T} L420,${T}`);
     [262,408].forEach(x=>el("circle",{cx:x,cy:T,r:4,fill:"var(--panel)",stroke:"var(--wire)","stroke-width":2},S));
     el("text",{x:335,y:T+4,class:"small","text-anchor":"middle"},S).textContent="（330Ω 已取出，ab 開路）";
   }
   colorRes(S,420,T,420,B,nominal.R3,"R3");
-  el("text",{x:436,y:162,class:"rname"},S).textContent="R3";el("text",{x:436,y:178,class:"lbl"},S).textContent=ohmTxt(nominal.R3);
+  el("text",{x:436,y:162,class:"rname"},S).textContent="";el("text",{x:436,y:178,class:"lbl"},S).textContent=ohmTxt(nominal.R3);
   w(`M420,${T} L440,${T}`);colorRes(S,440,T,540,T,nominal.R4,"R4");w(`M540,${T} L560,${T}`);
-  el("text",{x:490,y:T-18,class:"rname","text-anchor":"middle"},S).textContent="R4 "+ohmTxt(nominal.R4);
+  el("text",{x:490,y:T-18,class:"lbl","text-anchor":"middle"},S).textContent=ohmTxt(nominal.R4);
   battV(S,560,T,B,st.e2,st.V2,true);
   w(`M90,${B} L560,${B}`);
   // 節點
@@ -362,7 +360,7 @@ function drawSch(){
     if(st.red===id||st.black===id)el("text",{x:x+tx,y:y+ty,class:"probe-tag",fill:st.red===id?"var(--red)":"var(--black)","text-anchor":"middle"},S).textContent=st.red===id?"紅棒":"黑棒";
     keyAct(hit,()=>clickNode(id));
   });
-  el("text",{x:330,y:B+20,class:"small","text-anchor":"middle"},S).textContent="共同點";
+  el("text",{x:330,y:B+20,class:"small","text-anchor":"middle"},S).textContent="";
 }
 
 /* ---------- 麵包板 ---------- */

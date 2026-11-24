@@ -309,9 +309,9 @@ function drawSch(){
   const T=50,B=260,X1=140,X2=300,XA=400,XL=500;
   w(`M${X1},${T} L${XA},${T}`);w(`M${X1},${B} L${XA},${B}`);
   colorRes(S,X1,T,X1,150,nominal.R1,"R1");battV(S,X1,150,B,st.e1,st.V1);
-  el("text",{x:X1+16,y:96,class:"rname"},S).textContent="R1";el("text",{x:X1+16,y:112,class:"lbl"},S).textContent=ohmTxt(nominal.R1);
+  el("text",{x:X1+16,y:96,class:"rname"},S).textContent="";el("text",{x:X1+16,y:112,class:"lbl"},S).textContent=ohmTxt(nominal.R1);
   colorRes(S,X2,T,X2,150,nominal.R2,"R2");battV(S,X2,150,B,st.e2,st.V2);
-  el("text",{x:X2+16,y:96,class:"rname"},S).textContent="R2";el("text",{x:X2+16,y:112,class:"lbl"},S).textContent=ohmTxt(nominal.R2);
+  el("text",{x:X2+16,y:96,class:"rname"},S).textContent="";el("text",{x:X2+16,y:112,class:"lbl"},S).textContent=ohmTxt(nominal.R2);
   // a、b 端子
   [[XA,T],[XA,B]].forEach(([x,y])=>el("circle",{cx:x,cy:y,r:4.5,fill:"var(--panel)",stroke:"var(--wire)","stroke-width":2},S));
   const isA=R().type==="A",bx=450,my=(T+B)/2;
