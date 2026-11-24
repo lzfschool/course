@@ -163,9 +163,10 @@ footer{font-size:12.5px;color:var(--muted)}
 
   <section class="panel" aria-label="可變電阻調整">
     <div class="row" style="justify-content:space-between">
-      <h2>調整可變電阻 VR（1kΩ）</h2>
+      <h2>調整可變電阻 VR（<span id="vrMaxH">1kΩ</span>）</h2>
       <div class="ind"><span class="hint">電橋狀態</span><span class="bal" id="balTag"></span></div>
     </div>
+    <div class="row"><label class="hint" for="vrMax">更換可變電阻規格</label><select class="btn" id="vrMax"><option value="500">500Ω</option><option value="1000" selected>1kΩ（課本）</option><option value="2000">2kΩ</option><option value="5000">5kΩ</option><option value="10000">10kΩ</option></select><span class="hint" id="vrMaxTip"></span></div>
     <div class="vrbar">
       <svg class="knob" id="knob" viewBox="0 0 80 80" aria-hidden="true"></svg>
       <div style="min-width:0">
@@ -176,7 +177,7 @@ footer{font-size:12.5px;color:var(--muted)}
             <button class="btn" type="button" data-d="-10">−10</button><button class="btn" type="button" data-d="-1">−1</button>
             <button class="btn" type="button" data-d="1">+1</button><button class="btn" type="button" data-d="10">+10</button>
           </span>
-          <span class="hint">1kΩ（順時針到底）</span>
+          <span class="hint"><span id="vrMaxEnd">1kΩ</span>（順時針到底）</span>
         </div>
       </div>
       <div class="row" style="flex-direction:column;align-items:stretch;gap:6px">
@@ -212,7 +213,7 @@ const E=9, VF=1.8, RLED=10, RG=100;
 const BOOK={R1:220,R2:120,R3:560,R4:120};
 const nominal={...BOOK};
 const actual={};
-const st={power:false,vr:1000,vrOut:false,ind:"led",range:"V20",red:null,black:null,showVR:false,tol:true};
+const st={power:false,vrMax:1000,vr:1000,vrOut:false,ind:"led",range:"V20",red:null,black:null,showVR:false,tol:true};
 function reroll(){for(const k in nominal)actual[k]=st.tol?nominal[k]*(1+(Math.random()*2-1)*0.05):nominal[k]}
 reroll();
 const E12=[];[10,100,1000].forEach(m=>[10,12,15,18,22,27,33,39,47,56,68,82].forEach(v=>E12.push(v*m/10)));E12.push(10000);
@@ -334,7 +335,7 @@ function drawSch(sol){
   colorRes(S,150,230,250,230,nominal.R4,"R4");
   el("text",{x:200,y:208,class:"rname","text-anchor":"middle"},S).textContent="R4";
   el("text",{x:200,y:258,class:"lbl","text-anchor":"middle"},S).textContent=ohmTxt(nominal.R4);
-  if(!st.vrOut){vrSym(S,380,520,230,"VR 1kΩ")}
+  if(!st.vrOut){vrSym(S,380,520,230,"VR "+ohmTxt(st.vrMax))}
   else{
     w("M480,230 L520,230");
     el("text",{x:430,y:234,class:"small","text-anchor":"middle"},S).textContent="（VR 已拆下）";
@@ -434,7 +435,7 @@ function drawBB(sol){
     const px=X(17),py=Y("h");
     e("path",{d:`M${X(16)},${Y("i")} L${X(16)},${py} M${X(17)},${Y("i")} L${X(17)},${py} M${X(18)},${Y("i")} L${X(18)},${py}`,stroke:"#9a9a92","stroke-width":1.6});
     e("rect",{x:X(16)-10,y:py-24,width:X(18)-X(16)+20,height:30,rx:4,fill:"#2f5fa8",stroke:"#1c3d73"});
-    const a=(-135+270*st.vr/1000)*Math.PI/180;
+    const a=(-135+270*st.vr/st.vrMax)*Math.PI/180;
     e("circle",{cx:px,cy:py-9,r:9,fill:"#e8e8e0",stroke:"#777"});
     e("line",{x1:px,y1:py-9,x2:px+8*Math.sin(a),y2:py-9-8*Math.cos(a),stroke:"#333","stroke-width":2});
     e("text",{x:X(18)+14,y:py-4,"font-size":11,"font-weight":700,fill:"#1f7a5a"}).textContent="VR";
@@ -475,7 +476,7 @@ function drawKnob(){
   el("circle",{cx:40,cy:40,r:34,fill:"#2f5fa8",stroke:"#1c3d73","stroke-width":2},K);
   for(let i=0;i<=10;i++){const a=(-135+27*i)*Math.PI/180;el("line",{x1:40+28*Math.sin(a),y1:40-28*Math.cos(a),x2:40+33*Math.sin(a),y2:40-33*Math.cos(a),stroke:"#cfe0ff","stroke-width":1.2},K)}
   el("circle",{cx:40,cy:40,r:20,fill:"#e8e8e0",stroke:"#777"},K);
-  const a=(-135+270*st.vr/1000)*Math.PI/180;
+  const a=(-135+270*st.vr/st.vrMax)*Math.PI/180;
   el("line",{x1:40,y1:40,x2:40+18*Math.sin(a),y2:40-18*Math.cos(a),stroke:"#222","stroke-width":3,"stroke-linecap":"round"},K);
 }
 
@@ -546,7 +547,7 @@ function update(){
   else if(st.ind==="led"&&sol.led1<1e-5&&sol.led2<1e-5){tag.textContent="LED 熄滅（但 Vcd ≠ 0）";tag.className="bal mid"}
   else{tag.textContent=vcd>0?"不平衡：c 點較高（紅燈）":"不平衡：d 點較高（綠燈）";tag.className="bal no"}
   $("#balTxt").textContent=Math.round(balNom());
-  if(balNom()>1000){$("#note").textContent=`這組電阻的平衡點 VR = ${ohmTxt(nominal.R3)} × ${ohmTxt(nominal.R4)} ÷ ${ohmTxt(nominal.R2)} ≈ ${Math.round(balNom())}Ω，超過 VR 的最大值 1kΩ，怎麼轉都無法平衡。請換電阻。`;st._last=o;return}
+  if(balNom()>st.vrMax){$("#note").textContent=`這組電阻的平衡點 VR = ${ohmTxt(nominal.R3)} × ${ohmTxt(nominal.R4)} ÷ ${ohmTxt(nominal.R2)} ≈ ${Math.round(balNom())}Ω，超過 VR 的最大值 ${ohmTxt(st.vrMax)}，怎麼轉都無法平衡。請換較大的可變電阻或換電阻。`;st._last=o;return}
   $("#note").textContent=st.ind==="led"
     ?"LED 要約 1.8V 才會亮，c、d 電位差小於這個值時 LED 就熄滅了，所以「LED 熄滅」不一定剛好平衡。要精確找平衡點，可用電表 2V 檔量 Vcd，調到最接近 0，或改用檢流計 G。"
     :"檢流計很靈敏：指針偏右代表電流由 c 流向 d（c 點較高），偏左代表 d 點較高。調整 VR 讓指針回到中間，就是電橋平衡。";
@@ -557,7 +558,7 @@ function update(){
 const balSol=()=>{const s={vr:st.vr,vrOut:st.vrOut,power:st.power};st.vr=Math.round(vrBal());st.vrOut=false;st.power=true;const r=solve();Object.assign(st,s);return r};
 let SHEET;
 function makeSheet(){const n=nominal,o=ohmTxt,bn=Math.round(balNom());SHEET=[
-  {sec:"4. 接上電源（VR 順時針調至最大 1kΩ）"},
+  {sec:`4. 接上電源（VR 順時針調至最大 ${ohmTxt(st.vrMax)}）`},
   {k:"q1",label:"LED 是否發亮？",type:"yn"},
   {sec:"5. VR 轉至 0Ω（LED 亮）後慢慢調大，直到 LED 熄滅；拆下 VR 量電阻"},
   {k:"mVR",label:"可變電阻 VR =",unit:"Ω",type:"meas",tol:0.05,exp:()=>vrBal()},
@@ -588,10 +589,10 @@ function buildSheet(){
     e.addEventListener("input",()=>{saved[r.k]=e.value;try{localStorage.setItem(KEY,JSON.stringify(saved))}catch(err){}})});
 }
 function fillAns(){
-  const q1=(()=>{const s={vr:st.vr,vrOut:st.vrOut,power:st.power,ind:st.ind};Object.assign(st,{vr:1000,vrOut:false,power:true,ind:"led"});const r=solve();Object.assign(st,s);return r.led1+r.led2>1e-5?"是":"否"})();
+  const q1=(()=>{const s={vr:st.vr,vrOut:st.vrOut,power:st.power,ind:st.ind};Object.assign(st,{vr:st.vrMax,vrOut:false,power:true,ind:"led"});const r=solve();Object.assign(st,s);return r.led1+r.led2>1e-5?"是":"否"})();
   SHEET.forEach(r=>{if(!r.k)return;const a=$("#an-"+r.k);
     if(r.exp)a.textContent="參考 "+r.exp().toFixed(r.unit==="Ω"?0:r.unit==="mA"?2:3);
-    else a.textContent={q1:"參考 "+q1,q2:balNom()>1000?"參考 否（平衡點超過 1kΩ，VR 調不到）":"參考 是（約等於）",q3:"參考 是",q4:"參考 是（約相等）"}[r.k]||""})}
+    else a.textContent={q1:"參考 "+q1,q2:balNom()>st.vrMax?`參考 否（平衡點超過 ${ohmTxt(st.vrMax)}，VR 調不到）`:"參考 是（約等於）",q3:"參考 是",q4:"參考 是（約相等）"}[r.k]||""})}
 function check(){
   SHEET.forEach(r=>{if(!r.k||!r.exp)return;const e=$("#ws-"+r.k),mk=$("#mk-"+r.k);
     if(e.value===""){mk.textContent="";mk.className="mark";return}
@@ -611,7 +612,13 @@ function setInd(v){st.ind=v;$("#indLED").classList.toggle("on",v==="led");$("#in
 $("#indLED").addEventListener("click",()=>setInd("led"));$("#indG").addEventListener("click",()=>setInd("g"));
 $("#pwrBtn").addEventListener("click",()=>{st.power=!st.power;update()});
 $("#vr").addEventListener("input",e=>{st.vr=+e.target.value;update()});
-document.querySelectorAll("[data-d]").forEach(b=>b.addEventListener("click",()=>{st.vr=Math.max(0,Math.min(1000,st.vr+ +b.dataset.d));update()}));
+$("#vrMax").addEventListener("change",e=>{
+  st.vrMax=+e.target.value;st.vr=Math.min(st.vr,st.vrMax);
+  $("#vr").max=st.vrMax;$("#vr").step=st.vrMax>=5000?5:1;
+  $("#vrMaxH").textContent=$("#vrMaxEnd").textContent=ohmTxt(st.vrMax);
+  $("#vrMaxTip").textContent=balNom()>st.vrMax?"注意：這組電阻的平衡點超過此規格，VR 調不到平衡。":"";
+  buildSheet();fillAns();buildLegend();st._info=`可變電阻換成 ${ohmTxt(st.vrMax)}。`;update()});
+document.querySelectorAll("[data-d]").forEach(b=>b.addEventListener("click",()=>{st.vr=Math.max(0,Math.min(st.vrMax,st.vr+ +b.dataset.d));update()}));
 $("#vrOutBtn").addEventListener("click",()=>{st.vrOut=!st.vrOut;st.red=st.black=null;
   if(st.vrOut){st._info="VR 已拆下，旋鈕位置不變。切到 Ω 檔，點拆下的 VR 兩端量電阻。"}update()});
 $("#showVR").addEventListener("change",e=>{st.showVR=e.target.checked;update()});
@@ -629,7 +636,7 @@ $("#resetBtn").addEventListener("click",()=>{
 /* ---------- 電阻設定 ---------- */
 function buildLegend(){
   const seen=[...new Set(Object.values(nominal))].sort((a,b)=>a-b);
-  $("#ccLegend").innerHTML=seen.map((v,i)=>`<span>${i?"":"色碼："}${ohmTxt(v)} = ${ccName(v)}</span>`).join("")+"<span>VR = 1kΩ 可變電阻（藍色）</span><span>(G) 綠色 LED、(R) 紅色 LED</span>";
+  $("#ccLegend").innerHTML=seen.map((v,i)=>`<span>${i?"":"色碼："}${ohmTxt(v)} = ${ccName(v)}</span>`).join("")+`<span>VR = ${ohmTxt(st.vrMax)} 可變電阻（藍色）</span>`+"<span>(G) 綠色 LED、(R) 紅色 LED</span>";
 }
 function buildResSet(){
   const box=$("#resSet");box.innerHTML="";
