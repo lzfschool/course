@@ -424,6 +424,9 @@ function buildLegend(){
   $("#ccLegend").innerHTML="";
   seen.forEach((v,i)=>{const s=document.createElement("span");s.textContent=(i?"":"色碼：")+`${ohmTxt(v)} = ${ccName(v)}`;$("#ccLegend").appendChild(s)});
   if(seen.some(v=>v<10)){const h=document.createElement("span");h.textContent="（第三環金色代表 ×0.1）";$("#ccLegend").appendChild(h)}
+  {const n=nominal,o=ohmTxt,s=document.createElement("span");s.style.flexBasis="100%";s.style.color="var(--ink)";
+    s.textContent=`電路排列（由離 a、b 最遠的右端往左看）：R1（${o(n.R1)}）與 R4（${o(n.R4)}）串聯 → 再與 R5（${o(n.R5)}）並聯 → 串上 R2（${o(n.R2)}）→ 再與 R6（${o(n.R6)}）並聯 → 最後串上 R3（${o(n.R3)}）到 a 端。所以 RT = R3 + {R6 // [R2 + (R5 // (R1 + R4))]}。按下方「化簡步驟」可看到每一步的等效框。`;
+    $("#ccLegend").appendChild(s)}
 }
 function resChanged(info){reroll();buildSheet();fillAns();buildLegend();st._info=info;update()}
 
