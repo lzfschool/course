@@ -183,7 +183,8 @@ svg.plot{width:100%;height:auto;display:block;min-width:460px}
         <div class="row"><label class="hint" for="e2V">電壓</label><input type="number" id="e2V" min="0" max="30" step="0.1" value="9"><span class="hint">V</span></div>
       </div>
       <div class="src">
-        <h3>負載 R<sub>L</sub>（VR 1kΩ）：<span class="mono" id="vrNow"></span></h3>
+        <h3>負載 R<sub>L</sub>（VR <span id="vrMaxH">1kΩ</span>）：<span class="mono" id="vrNow"></span></h3>
+        <div class="row"><label class="hint" for="vrMax">可變電阻規格</label><select class="btn" id="vrMax"><option value="500">500Ω</option><option value="1000" selected>1kΩ（課本）</option><option value="2000">2kΩ</option><option value="5000">5kΩ</option><option value="10000">10kΩ</option></select></div>
         <div class="row">
           <button class="btn on" id="ldOn" type="button">接上 VR</button>
           <button class="btn" id="ldOff" type="button">取出 R<sub>L</sub></button>
@@ -251,7 +252,7 @@ const $=s=>document.querySelector(s);
 const NS="http://www.w3.org/2000/svg";
 const BOOK={R1:100,R2:150};
 const nominal={...BOOK},actual={};
-const st={e1:true,e2:true,V1:9,V2:9,load:false,vr:500,range:"R200",red:"a",black:"b",brk:null,tol:true,showSum:false};
+const st={e1:true,e2:true,V1:9,V2:9,load:false,vrMax:1000,vr:500,range:"R200",red:"a",black:"b",brk:null,tol:true,showSum:false};
 function reroll(){for(const k in nominal)actual[k]=st.tol?nominal[k]*(1+(Math.random()*2-1)*0.05):nominal[k]}
 reroll();
 const E12=[];[10,100,1000].forEach(m=>[10,12,15,18,22,27,33,39,47,56,68,82].forEach(v=>E12.push(v*m/10)));E12.push(10000);
@@ -333,7 +334,7 @@ function drawSch(){
     w(`M${bx+10},${T} L${XL},${T} L${XL},${my-32} M${XL},${my+32} L${XL},${B} L${XA+4},${B}`);
     el("rect",{x:XL-9,y:my-32,width:18,height:64,rx:3,fill:"var(--panel)",stroke:"var(--wire)","stroke-width":2.2},S);
     el("path",{d:`M${XL-24},${my+30} L${XL+24},${my-30} m-10,1 l10,-1 l-2,10`,fill:"none",stroke:"var(--accent)","stroke-width":2},S);
-    el("text",{x:XL+30,y:my-4,class:"rname"},S).textContent="RL（VR 1kΩ）";
+    el("text",{x:XL+30,y:my-4,class:"rname"},S).textContent="RL（VR "+ohmTxt(st.vrMax)+"）";
     el("text",{x:XL+30,y:my+14,class:"lbl"},S).textContent=ohmTxt(st.vr);
   }else{
     el("text",{x:XL,y:my+4,class:"small","text-anchor":"middle"},S).textContent="（RL 已取出）";
@@ -412,10 +413,10 @@ function drawBB(){
     [22,23,24].forEach(c=>e("path",{d:`M${X(c)},${Y("h")} L${X(c)},${Y("h")+12}`,stroke:"#9a9a92","stroke-width":2}));
     e("rect",{x:X(22)-8,y:Y("h")+10,width:X(24)-X(22)+16,height:30,rx:5,fill:"#1f5fbf"});
     e("circle",{cx:X(23),cy:Y("h")+25,r:9,fill:"#e8e8e0",stroke:"#555"});
-    const rad=(-135+270*st.vr/1000)*Math.PI/180;
+    const rad=(-135+270*st.vr/st.vrMax)*Math.PI/180;
     e("line",{x1:X(23),y1:Y("h")+25,x2:X(23)+7*Math.sin(rad),y2:Y("h")+25-7*Math.cos(rad),stroke:"#222","stroke-width":2});
     jumper(23,"g",23,"n2","#333",-10);
-    e("text",{x:X(24)+14,y:Y("h")+28,"font-size":11,"font-weight":700,fill:"#1f7a5a"}).textContent="VR 1kΩ ＝ "+ohmTxt(st.vr);
+    e("text",{x:X(24)+14,y:Y("h")+28,"font-size":11,"font-weight":700,fill:"#1f7a5a"}).textContent="VR "+ohmTxt(st.vrMax)+" ＝ "+ohmTxt(st.vr);
   }else e("text",{x:X(23),y:Y("g"),"font-size":10,fill:"#8a8a80","text-anchor":"middle"}).textContent="（RL 已取出）";
   [["a",10,"a"],["b",8,"n2"],["c",4,"e"],["d",16,"e"]].forEach(([id,c,r])=>{
     const x=X(c),yy=Y(r);
@@ -521,12 +522,12 @@ let PTS=[];
 function drawPlot(){
   const S=$("#plot");S.innerHTML="";
   const L=64,Rt=580,T=20,Bm=280;
-  const xMax=Math.max(300,...PTS.map(p=>Math.ceil(p[0]/100)*100),st.load?Math.min(1000,Math.ceil(st.vr/100)*100):0);
+  const xMax=Math.max(300,...PTS.map(p=>Math.ceil(p[0]/100)*100),st.load?Math.min(st.vrMax,Math.ceil(st.vr/100)*100):0);
   const E=eTh(nominal,st.V1,st.V2),Rn=rTh(nominal),theo=x=>E*E*x/Math.pow(Rn+x,2)*1000;
   const sol=cur(),live=st.load&&st.e1&&st.e2?[st.vr,sol.P*1000]:null;
   let yTop=Math.max(50,...PTS.map(p=>p[1]),live?live[1]:0,st.showSum?theo(Rn):0)*1.15;
   const step=yTop>400?100:yTop>200?50:yTop>80?20:10;yTop=Math.ceil(yTop/step)*step;
-  const xs=xMax>500?100:50;
+  const xs=xMax<=500?50:xMax<=1000?100:xMax<=2000?200:xMax<=5000?500:1000;
   const px=x=>L+(Rt-L)*x/xMax,py=y=>Bm-(Bm-T)*y/yTop;
   for(let y=0;y<=yTop+1e-9;y+=step){el("line",{x1:L,x2:Rt,y1:py(y),y2:py(y),stroke:"var(--line)","stroke-width":1},S);
     el("text",{x:L-8,y:py(y)+4,class:"lbl","text-anchor":"end","font-size":11},S).textContent=y}
@@ -658,7 +659,12 @@ const clampV=v=>Math.max(0,Math.min(30,isNaN(v)?0:Math.round(v*10)/10));
 $("#e1V").addEventListener("change",e=>{st.V1=clampV(parseFloat(e.target.value));e.target.value=st.V1;update()});
 $("#e2V").addEventListener("change",e=>{st.V2=clampV(parseFloat(e.target.value));e.target.value=st.V2;update()});
 $("#vr").addEventListener("input",e=>{st.vr=+e.target.value;update()});
-document.querySelectorAll("[data-d]").forEach(b=>b.addEventListener("click",()=>{st.vr=Math.max(0,Math.min(1000,st.vr+(+b.dataset.d)));update()}));
+$("#vrMax").addEventListener("change",e=>{
+  st.vrMax=+e.target.value;st.vr=Math.min(st.vr,st.vrMax);
+  $("#vr").max=st.vrMax;$("#vr").step=st.vrMax>=5000?5:1;
+  $("#vrMaxH").textContent=ohmTxt(st.vrMax);
+  st._info=`可變電阻換成 ${ohmTxt(st.vrMax)}。`;update()});
+document.querySelectorAll("[data-d]").forEach(b=>b.addEventListener("click",()=>{st.vr=Math.max(0,Math.min(st.vrMax,st.vr+(+b.dataset.d)));update()}));
 $("#addPt").addEventListener("click",()=>{
   const o=st._last,r=R();
   if(!st.load||r.type!=="V"||st.red!=="a"||st.black!=="b"||!o||o.ol||!st.e1||!st.e2){$("#msg").textContent="請先接上兩個電源與 VR，電表用 DCV 檔、紅棒 a、黑棒 b，再加入曲線。";$("#msg").className="msg warn";return}
