@@ -134,8 +134,8 @@ svg.eq{width:100%;max-width:460px;height:auto;display:block}
       </div>
       <div class="svgbox" id="schBox"><svg class="circuit" id="circ" viewBox="0 0 640 320" role="img" aria-label="諾頓定理實習電路"></svg></div>
       <div class="svgbox" id="bbBox" hidden>
-        <svg class="circuit" id="bb" viewBox="0 0 650 360" role="img" aria-label="麵包板接線圖"></svg>
-        <p class="hint" style="margin:6px 0 0">9V 電池插在第 2、4 行，3V（兩顆 1.5V 串聯）插在第 24、26 行，負端以黑色跳線接到下方藍色軌（共同點）。第 10 行是 a 點、第 18 行是 b 點；紫色跳線連到 330Ω，量短路電流時，電流檔的紅棒點 a、黑棒點 b；驗證 I<sub>L</sub> 時點 ✕ 取下跳線、串入電表。</p>
+        <svg class="circuit" id="bb" viewBox="0 0 712 360" role="img" aria-label="麵包板接線圖"></svg>
+        <p class="hint" style="margin:6px 0 0">照教師版麵包板的畫法排列：9V 電源（左）＋端接第 3 行、3V 電源（右，1.5V × 2）＋端接第 23 行，兩電源負端都接下方−軌（共同點）。第 9 行是 a 點、第 17 行是 b 點；紫色跳線把 a 接到 330Ω。量短路電流時，電流檔的紅棒點 a、黑棒點 b；驗證 I<sub>L</sub> 時點 ✕ 取下跳線、串入電表。</p>
       </div>
       <div class="legend" id="ccLegend"></div>
       <div>
@@ -388,7 +388,7 @@ function drawBB(){
   "abcdefghij".split("").forEach(r=>{e("text",{x:90,y:Y(r)+3,fill:"#8a8a80","font-size":9,"text-anchor":"middle","font-family":"IBM Plex Mono,monospace"}).textContent=r});
   function jumper(c1,r1,c2,r2,color="#7b3fb5",lift=16){
     const x1=X(c1),y1=Y(r1),x2=X(c2),y2=Y(r2),mx=(x1+x2)/2,my=(y1+y2)/2,vert=x1===x2;
-    e("path",{d:`M${x1},${y1} Q${vert?mx+lift:mx},${vert?my:my-lift} ${x2},${y2}`,fill:"none",stroke:color,"stroke-width":3.2,"stroke-linecap":"round"});
+    e("path",{d:lift?`M${x1},${y1} Q${vert?mx+lift:mx},${vert?my:my-lift} ${x2},${y2}`:`M${x1},${y1} L${x2},${y2}`,fill:"none",stroke:color,"stroke-width":3.2,"stroke-linecap":"round"});
     [[x1,y1],[x2,y2]].forEach(([x,y])=>e("circle",{cx:x,cy:y,r:3,fill:color}));
   }
   // 電池：+ 腳在 cP 欄、− 腳在 cN 欄（row a），本體畫在上方
@@ -406,42 +406,56 @@ function drawBB(){
       e("text",{x:(xp+xn)/2,y:y-16,"font-size":10,fill:"#b06a00","text-anchor":"middle"}).textContent="短路線";
     }
   }
-  // 左：9V（+ 第4行、− 第2行）→ R1 → a（第10行）→ R2 → 共同點
-  bat(4,2,st.e1,st.V1);jumper(2,"e",2,"n2","#333",-12);
-  colorRes(B,X(4),Y("c"),X(10),Y("c"),nominal.R1,"R1");
-  colorRes(B,X(10),Y("e"),X(10),Y("h"),nominal.R2,"R2");jumper(10,"j",10,"n2","#333");
-  // 右：3V（+ 第24行、− 第26行）→ R4 → b（第18行）→ R3 → 共同點
-  bat(24,26,st.e2,st.V2);jumper(26,"e",26,"n2","#333",12);
-  colorRes(B,X(18),Y("d"),X(24),Y("d"),nominal.R4,"R4");
-  colorRes(B,X(18),Y("e"),X(18),Y("h"),nominal.R3,"R3");jumper(18,"j",18,"n2","#333");
-  // 負載
+  // 依教師版麵包板的畫法（直線跳線、電源以導線接入、下方−軌為共同點）排列圖 3-19：
+  // 9V（左）→ R1 → a（第 9 行）→ R2 → 共同點；a → 330Ω → b（第 17 行）→ R3 → 共同點；b → R4 → 第 23 行 → 3V（右）
+  function src(side,on,volt,col){
+    const bx=side==="L"?6:648,cx=bx+29,cy=50;
+    e("rect",{x:bx,y:24,width:58,height:52,rx:6,fill:on?"#2b2f2c":"#8d918d",stroke:"#1b1d1b"});
+    e("text",{x:cx,y:44,fill:"#ffd84a","font-size":11,"text-anchor":"middle","font-family":"IBM Plex Mono,monospace"}).textContent="DC";
+    e("text",{x:cx,y:62,fill:"#ffd84a","font-size":13,"font-weight":700,"text-anchor":"middle","font-family":"IBM Plex Mono,monospace"}).textContent=volt+"V";
+    const hx=X(col),ex=side==="L"?X(1):X(30),nx=side==="L"?bx+22:bx+36;
+    if(on){
+      e("path",{d:`M${side==="L"?bx+58:bx},36 C${side==="L"?bx+80:bx-20},36 ${hx},${Y("a")-30} ${hx},${Y("a")}`,fill:"none",stroke:"#d32f2f","stroke-width":3,"stroke-linecap":"round"});
+      e("path",{d:`M${nx},76 L${nx},${Y("n2")} L${ex},${Y("n2")}`,fill:"none",stroke:"#222","stroke-width":3,"stroke-linejoin":"round"});
+      e("circle",{cx:hx,cy:Y("a"),r:3.5,fill:"#d32f2f"});e("circle",{cx:ex,cy:Y("n2"),r:3.5,fill:"#222"});
+    }else{
+      e("text",{x:cx,y:92,fill:"var(--muted)","font-size":10,"text-anchor":"middle"}).textContent="已換短路線";
+      jumper(col,"e",col,"n2","#e08a00",0);
+      e("text",{x:X(col)+(side==="L"?8:-8),y:Y("h"),"font-size":10,fill:"#b06a00","text-anchor":side==="L"?"start":"end"}).textContent="短路線";
+    }
+  }
+  src("L",st.e1,st.V1,3);src("R",st.e2,st.V2,23);
+  colorRes(B,X(3),Y("b"),X(9),Y("b"),nominal.R1,"R1");
+  colorRes(B,X(9),Y("e"),X(9),Y("h"),nominal.R2,"R2");jumper(9,"j",9,"n2","#555",0);
+  colorRes(B,X(17),Y("e"),X(17),Y("h"),nominal.R3,"R3");jumper(17,"j",17,"n2","#555",0);
+  colorRes(B,X(17),Y("c"),X(23),Y("c"),nominal.R4,"R4");
+  // 負載 330Ω（a 經跳線接到第 11 行）
   const isA=R().type==="A";
   if(st.load){
-    colorRes(B,X(12),Y("c"),X(18),Y("c"),nominal.RL,"RL");
-    const x1=X(10),x2=X(12),y=Y("b"),lift=12,mx=(x1+x2)/2;
+    colorRes(B,X(11),Y("b"),X(17),Y("b"),nominal.RL,"RL");
+    const x1=X(9),x2=X(11),y=Y("a"),mx=(x1+x2)/2;
     if(st.brk==="L"&&isA){
-      const ay=y-lift-6;
-      e("path",{d:`M${x1},${y} Q${x1},${ay} ${mx},${ay}`,fill:"none",stroke:"#d32f2f","stroke-width":2.6});
-      e("path",{d:`M${mx},${ay} Q${x2},${ay} ${x2},${y}`,fill:"none",stroke:"#222","stroke-width":2.6});
+      const ay=y-16;
+      e("path",{d:`M${x1},${y} L${x1},${ay} L${mx-11},${ay}`,fill:"none",stroke:"#d32f2f","stroke-width":2.6});
+      e("path",{d:`M${mx+11},${ay} L${x2},${ay} L${x2},${y}`,fill:"none",stroke:"#222","stroke-width":2.6});
       e("circle",{cx:mx,cy:ay,r:11,fill:"#fff",stroke:"#e6b92e","stroke-width":3});
       e("text",{x:mx,y:ay+4.5,"font-size":12,"font-weight":700,"text-anchor":"middle",fill:"#222"}).textContent="A";
     }else{
-      jumper(10,"b",12,"b","#7b3fb5",lift);
+      jumper(9,"a",11,"a","#7b3fb5",0);
       if(isA){
         const g=e("g",{class:"brk",tabindex:0,role:"button","aria-label":"取下 a 至 330Ω 的跳線並串入電表"});
-        const py=y-lift/2;
-        el("circle",{cx:mx,cy:py,r:8,fill:"#fff",stroke:"#1f7a5a","stroke-width":1.6,"stroke-dasharray":"3 2"},g);
-        el("path",{d:`M${mx-3.5},${py-3.5} L${mx+3.5},${py+3.5} M${mx+3.5},${py-3.5} L${mx-3.5},${py+3.5}`,stroke:"#1f7a5a","stroke-width":2},g);
+        el("circle",{cx:mx,cy:y-9,r:8,fill:"#fff",stroke:"#1f7a5a","stroke-width":1.6,"stroke-dasharray":"3 2"},g);
+        el("path",{d:`M${mx-3.5},${y-12.5} L${mx+3.5},${y-5.5} M${mx+3.5},${y-12.5} L${mx-3.5},${y-5.5}`,stroke:"#1f7a5a","stroke-width":2},g);
         keyAct(g,()=>{st.brk="L";st.red=st.black=null;update()});
       }
     }
   }else{
-    e("text",{x:X(15),y:Y("c")+4,"font-size":10,fill:"#8a8a80","text-anchor":"middle"}).textContent="（330Ω 已取出）";
+    e("text",{x:X(14),y:Y("b")+4,"font-size":10,fill:"#8a8a80","text-anchor":"middle"}).textContent="（330Ω 已取出）";
   }
-  [["R1",7,Y("c")-13],["R4",21,Y("d")+19],["RL",15,Y("c")-13]].forEach(([t,c,y])=>{if(t==="RL"&&!st.load)return;e("text",{x:X(c),y,"font-size":11,"font-weight":700,fill:"#1f7a5a","text-anchor":"middle"}).textContent=t});
-  [["R2",10],["R3",18]].forEach(([t,c])=>e("text",{x:X(c)+14,y:Y("g"),"font-size":11,"font-weight":700,fill:"#1f7a5a"}).textContent=t);
+  [["R1",6,Y("b")-13],["R4",20,Y("c")+20],["RL",14,Y("b")-13]].forEach(([t,c,y])=>{if(t==="RL"&&!st.load)return;e("text",{x:X(c),y,"font-size":11,"font-weight":700,fill:"#1f7a5a","text-anchor":"middle"}).textContent=t});
+  [["R2",9],["R3",17]].forEach(([t,c])=>e("text",{x:X(c)+14,y:Y("g"),"font-size":11,"font-weight":700,fill:"#1f7a5a"}).textContent=t);
   // 量測點
-  [["a",10,"a"],["b",18,"b"],["p",4,"e"],["q",24,"e"],["g",14,"n2"]].forEach(([id,c,r])=>{
+  [["a",9,"d"],["b",17,"d"],["p",3,"d"],["q",23,"e"],["g",13,"n2"]].forEach(([id,c,r])=>{
     const x=X(c),y=Y(r);
     const hit=e("circle",{cx:x,cy:y,r:10,class:"node-hit",tabindex:0,role:"button","aria-label":"麵包板量測點 "+NN[id]});
     el("title",{},hit).textContent=NN[id];
