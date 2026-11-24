@@ -313,6 +313,13 @@ function draw(){
   arrow("M314,72 L314,104 m-5,-7 l5,7 l5,-7",'I<tspan font-size="11" dy="4">1</tspan>',320,96);
   arrow("M514,66 L514,96 m-5,-7 l5,7 l5,-7",'I<tspan font-size="11" dy="4">2</tspan>',520,84);
   arrow("M196,284 L196,252 m-5,7 l5,-7 l5,7",'R<tspan font-size="11" dy="4">ab</tspan>',204,292);
+  // R1、R2 說明框：R1 = 兩個分路電阻並聯，R2 = 右側兩電阻串聯
+  {const bx=(x,y,w,h,t,tx,ty,sub)=>{el("rect",{x,y,width:w,height:h,rx:8,fill:"none",stroke:"var(--accent)","stroke-width":1.4,"stroke-dasharray":"6 4",opacity:.85});
+      const tt=el("text",{x:tx,y:ty,class:"nodelbl","font-size":15,style:"font-size:15px"});tt.textContent=t;
+      const ts=el("text",{x:tx,y:ty+14,class:"lbl small"});ts.textContent=sub};
+    bx(206,112,196,136,"R1",212,130,"");
+    bx(462,100,104,192,"R2",568,112,"");
+}
   // 直流電源
   const g=el("g",{class:"batt"});
   el("line",{x1:44,y1:172,x2:76,y2:172,stroke:"var(--wire)","stroke-width":2.6},g);
@@ -628,6 +635,10 @@ function buildLegend(){
   const seen=[...new Set(Object.values(nominal))].sort((a,b)=>a-b);
   $("#ccLegend").innerHTML="";
   seen.forEach((v,i)=>{const s=document.createElement("span");s.textContent=(i?"":"色碼：")+`${ohmTxt(v)} = ${ccName(v)}`;$("#ccLegend").appendChild(s)});
+  {const s=document.createElement("span");s.style.flexBasis="100%";s.style.color="var(--ink)";
+    s.textContent=`R1 = ${ohmTxt(nominal.Rp1)} // ${ohmTxt(nominal.Rp2)}（a、b 間左邊兩個電阻並聯）；R2 = ${ohmTxt(nominal.R3)} + ${ohmTxt(nominal.R4)}（右邊兩個電阻串聯，c 在兩者之間）。Rab = R1 // R2。`;
+    $("#ccLegend").appendChild(s)}
+
 }
 function resChanged(info){
   reroll();makeSheet();buildSheet();fillAns();buildLegend();st._info=info;update();
