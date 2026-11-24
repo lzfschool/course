@@ -131,7 +131,7 @@ footer{font-size:12.5px;color:var(--muted)}
       <div class="svgbox" id="schBox"><svg class="circuit" id="circ" viewBox="0 0 640 330" role="img" aria-label="惠斯登電橋電路"></svg></div>
       <div class="svgbox" id="bbBox" hidden>
         <svg class="circuit" id="bb" viewBox="0 0 650 400" role="img" aria-label="麵包板接線圖"></svg>
-        <p class="hint" style="margin:6px 0 0">上方紅色軌接電源 +，藍色軌為 b（接電源 −，右側跳線連到下方藍色軌）。上半部是 R1、R2、R3，下半部是 R4 與 VR；c、d 之間接電壓表（或改用 LED、檢流計）。</p>
+        <p class="hint" style="margin:6px 0 0">依教師版圖 3-11 排列：R1 由＋軌直插到第 4 行（a）；上半部 R2 接到 c、R3 接到 b；第 4 行跨溝槽到下半部接 R4 到 d，d 再用跳線接到 VR，VR 經第 19 行回到 b。c、d 之間接電壓表（或改用 LED、檢流計）。</p>
       </div>
       <div class="legend" id="ccLegend"></div>
       <div>
@@ -413,7 +413,7 @@ function drawBB(sol){
   }else e("text",{x:35,y:92,fill:"var(--muted)","font-size":11,"text-anchor":"middle"}).textContent="未接上";
   function jumper(c1,r1,c2,r2,color="#7b3fb5",lift=16){
     const x1=X(c1),y1=Y(r1),x2=X(c2),y2=Y(r2),mx=(x1+x2)/2,my=(y1+y2)/2,vert=x1===x2;
-    e("path",{d:`M${x1},${y1} Q${vert?mx+lift:mx},${vert?my:my-lift} ${x2},${y2}`,fill:"none",stroke:color,"stroke-width":3.2,"stroke-linecap":"round"});
+    e("path",{d:lift?`M${x1},${y1} Q${vert?mx+lift:mx},${vert?my:my-lift} ${x2},${y2}`:`M${x1},${y1} L${x2},${y2}`,fill:"none",stroke:color,"stroke-width":3.2,"stroke-linecap":"round"});
     [[x1,y1],[x2,y2]].forEach(([x,y])=>e("circle",{cx:x,cy:y,r:3,fill:color}));
   }
   // LED 跨溝槽：上腳在 row e，下腳在 row f；anodeTop=true 表示正腳在上
@@ -425,42 +425,49 @@ function drawBB(sol){
     e("text",{x:x-6,y:anodeTop?y1-6:y2+14,"font-size":9,fill:"#666","text-anchor":"middle"}).textContent="+";
     e("text",{x:cx+12,y:cy+4,"font-size":10,"font-weight":700,fill:"#555"}).textContent=lab;
   }
-  // 上半部：電源 + → R1 → a(第7行) → R2 → c(第11行) → R3 → b
-  jumper(3,"a",3,"p","#d32f2f");
-  colorRes(B,X(3),Y("c"),X(7),Y("c"),nominal.R1,"R1");
-  colorRes(B,X(7),Y("b"),X(11),Y("b"),nominal.R2,"R2");
-  colorRes(B,X(11),Y("c"),X(15),Y("c"),nominal.R3,"R3");
-  jumper(15,"a",15,"n","#333");
-  // 下半部：a → R4 → d(第11行) → VR → b
-  jumper(7,"e",7,"f","#7b3fb5",10);
-  colorRes(B,X(7),Y("g"),X(11),Y("g"),nominal.R4,"R4");
-  // LED：c 延伸到第13行、d 延伸到第13行
-  jumper(11,"d",13,"d","#7b3fb5",10);jumper(11,"i",13,"i","#7b3fb5",-10);
+  // 依教師版圖 3-11 麵包板：R1 由＋軌直插到第 4 行（a）；上半部 R2（a→c）、R3（c→b）；
+  // 第 4 行跨溝槽到下半部接 R4（a→d）；c、d 之間的指示器跨過溝槽；d 經跳線接 VR，VR 另一端經第 19 行回到 b
+  colorRes(B,X(4),Y("p"),X(4),Y("a"),nominal.R1,"R1");
+  colorRes(B,X(4),Y("d"),X(10),Y("d"),nominal.R2,"R2");
+  colorRes(B,X(10),Y("c"),X(16),Y("c"),nominal.R3,"R3");
+  jumper(10,"a",12,"a","#555",0);
+  jumper(16,"b",19,"b","#555",0);
+  jumper(4,"e",4,"f","#555",0);jumper(19,"e",19,"f","#555",0);
+  colorRes(B,X(4),Y("g"),X(10),Y("g"),nominal.R4,"R4");
+  jumper(10,"h",12,"h","#555",0);
+  jumper(16,"a",16,"n","#333",0);   // b 接電源負端（上方藍軌）
+  // c、d 之間的指示器
   if(st.ind==="led"){
-    bbLed(11,"#2ecc40",sol.led2/0.004,false,"(G)");
-    bbLed(13,"#ff3b30",sol.led1/0.004,true,"(R)");
-  }else e("text",{x:X(12),y:Y("f")-10,"font-size":10,fill:"#8a8a80","text-anchor":"middle"}).textContent=st.ind==="v"?"（c、d 接電壓表 V）":"（改接檢流計 G）";
+    bbLed(10,"#2ecc40",sol.led2/0.004,false,"(G)");
+    bbLed(12,"#ff3b30",sol.led1/0.004,true,"(R)");
+  }else if(st.ind==="v"){
+    const vx=X(14),vy=(Y("e")+Y("f"))/2;
+    e("path",{d:`M${X(12)},${Y("a")} C${X(13)},${Y("a")-14} ${vx},${vy-40} ${vx},${vy-12}`,fill:"none",stroke:"#d32f2f","stroke-width":2.4});
+    e("path",{d:`M${X(12)},${Y("h")} C${X(13)},${Y("h")+10} ${vx},${vy+40} ${vx},${vy+12}`,fill:"none",stroke:"#222","stroke-width":2.4});
+    e("circle",{cx:vx,cy:vy,r:12,fill:"#fff",stroke:"#e6b92e","stroke-width":3});
+    e("text",{x:vx,y:vy+4.5,"font-size":12,"font-weight":700,"text-anchor":"middle",fill:"#222"}).textContent="V";
+    const vv=st.power?sol.Vc-sol.Vd:0;
+    e("text",{x:vx+18,y:vy+4,"font-size":11,"font-weight":700,"font-family":"IBM Plex Mono,monospace",fill:"#1b2417"}).textContent=(vv<-0.0005?"−":"")+Math.abs(vv).toFixed(3)+" V";
+  }else e("text",{x:X(11),y:Y("f")-10,"font-size":10,fill:"#8a8a80","text-anchor":"middle"}).textContent="（改接檢流計 G）";
   if(!st.vrOut){
-    jumper(11,"h",16,"f","#7b3fb5",-6);
-    const px=X(17),py=Y("h");
-    e("path",{d:`M${X(16)},${Y("i")} L${X(16)},${py} M${X(17)},${Y("i")} L${X(17)},${py} M${X(18)},${Y("i")} L${X(18)},${py}`,stroke:"#9a9a92","stroke-width":1.6});
-    e("rect",{x:X(16)-10,y:py-24,width:X(18)-X(16)+20,height:30,rx:4,fill:"#2f5fa8",stroke:"#1c3d73"});
+    jumper(10,"j",17,"j","#555",0);
+    const py=Y("i")+34;
+    e("path",{d:`M${X(17)},${Y("i")} L${X(17)},${py-14} M${X(18)},${Y("i")} L${X(18)},${py-14} M${X(19)},${Y("i")} L${X(19)},${py-14}`,stroke:"#9a9a92","stroke-width":1.6});
+    e("rect",{x:X(17)-10,y:py-16,width:X(19)-X(17)+20,height:30,rx:4,fill:"#2f5fa8",stroke:"#1c3d73"});
     const a=(-135+270*st.vr/st.vrMax)*Math.PI/180;
-    e("circle",{cx:px,cy:py-9,r:9,fill:"#e8e8e0",stroke:"#777"});
-    e("line",{x1:px,y1:py-9,x2:px+8*Math.sin(a),y2:py-9-8*Math.cos(a),stroke:"#333","stroke-width":2});
-    e("text",{x:X(18)+14,y:py-4,"font-size":11,"font-weight":700,fill:"#1f7a5a"}).textContent="VR";
-    jumper(17,"j",17,"n2","#333");
+    e("circle",{cx:X(18),cy:py-1,r:9,fill:"#e8e8e0",stroke:"#777"});
+    e("line",{x1:X(18),y1:py-1,x2:X(18)+8*Math.sin(a),y2:py-1-8*Math.cos(a),stroke:"#333","stroke-width":2});
+    e("text",{x:X(19)+14,y:py+4,"font-size":11,"font-weight":700,fill:"#1f7a5a"}).textContent="VR";
+    jumper(18,"j",19,"j","#555",0);
   }else{
-    e("text",{x:X(17),y:Y("h"),"font-size":11,fill:"#8a8a80","text-anchor":"middle"}).textContent="VR 已拆下";
+    e("text",{x:X(18),y:Y("i"),"font-size":11,fill:"#8a8a80","text-anchor":"middle"}).textContent="VR 已拆下";
     e("rect",{x:X(17)-30,y:364,width:60,height:24,rx:4,fill:"#2f5fa8",stroke:"#1c3d73"});
     e("text",{x:X(17)-66,y:381,"font-size":11,fill:"var(--muted)","text-anchor":"end"}).textContent="拆下的 VR →";
   }
-  // 下方藍軌連到上方藍軌（b）
-  jumper(29,"n2",29,"n","#333",22);
   // 元件標籤
-  [["R1",5,"c"],["R2",9,"b"],["R3",13,"c"],["R4",9,"g"]].forEach(([t,c,r])=>e("text",{x:X(c),y:Y(r)-12,"font-size":11,"font-weight":700,fill:"#1f7a5a","text-anchor":"middle"}).textContent=t);
-  // 量測點
-  const pts=[["a",7,"d"],["b",22,"n"],["c",11,"a"],["d",13,"j"]];
+  [["R1",4,"n",14],["R2",7,"d",0],["R3",13,"c",0],["R4",7,"g",0]].forEach(([t,c,r,dx])=>e("text",{x:X(c)+dx,y:Y(r)-(dx?-14:12),"font-size":11,"font-weight":700,fill:"#1f7a5a","text-anchor":dx?"start":"middle"}).textContent=t);
+  // 量測點（位置同教師版：a、c、b、d）
+  const pts=[["a",4,"c"],["b",16,"d"],["c",10,"b"],["d",10,"i"]];
   if(st.vrOut)pts.push(["v1",X(17)-24,null],["v2",X(17)+24,null]);
   pts.forEach(([id,c,r])=>{
     const x=r?X(c):c,y=r?Y(r):376;

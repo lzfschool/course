@@ -156,7 +156,7 @@ footer{font-size:12.5px;color:var(--muted)}
       </div>
       <div class="svgbox" id="bbBox" hidden>
         <svg class="circuit" id="bb" viewBox="0 0 650 360" role="img" aria-label="麵包板接線圖"></svg>
-        <p class="hint" style="margin:6px 0 0">麵包板上半部同一直行（a–e）的 5 個孔互相導通，下半部（f–j）亦同；上方電源軌左右導通（紅 +、藍 −）。紫色為跳線。量電流時點跳線上的 ✕，就是「拔開這條接線、串入電表」。</p>
+        <p class="hint" style="margin:6px 0 0">依教師版圖 3-6 排列：電源＋接上方＋軌、−接下方−軌；470Ω 由＋軌直插到第 5 行（a）。220Ω（上半部）與 330Ω（下半部）並接在第 7、13 行，第 13 行下半部就是 b，再用跳線接到−軌；270Ω 接到第 15 行（c），390Ω 跨過溝槽回到 b。量電流時點接線上的 ✕，就是「拔開這條接線、串入電表」。</p>
       </div>
       <div class="svgbox" id="schBox"><svg class="circuit off" id="circ" viewBox="0 0 600 340" role="img" aria-label="串並聯電路：DC 9V 電源經 470Ω 串接 a 點，a、b 間並聯 220Ω//330Ω 與 270Ω+390Ω 兩分路"></svg></div>
       <div class="legend">
@@ -379,24 +379,40 @@ function drawBB(){
     if(c===1||c%5===0){[84,292].forEach(y=>{const t=e("text",{x:X(c),y,fill:"#8a8a80","font-size":9,"text-anchor":"middle","font-family":"IBM Plex Mono,monospace"});t.textContent=c})}
   }
   "abcdefghij".split("").forEach(r=>{const t=e("text",{x:90,y:Y(r)+3,fill:"#8a8a80","font-size":9,"text-anchor":"middle","font-family":"IBM Plex Mono,monospace"});t.textContent=r});
-  // 直流電源
-  const on=st.power;
+  // 直流電源（依教師版圖 3-6：＋接上方＋軌、−接下方−軌）
+  const on=st.power,isA=R().type==="A";
   e("rect",{x:6,y:24,width:58,height:52,rx:6,fill:on?"#2b2f2c":"#8d918d",stroke:"#1b1d1b"});
   let t=e("text",{x:35,y:44,fill:"#ffd84a","font-size":11,"text-anchor":"middle","font-family":"IBM Plex Mono,monospace"});t.textContent="DC";
   t=e("text",{x:35,y:62,fill:"#ffd84a","font-size":13,"font-weight":700,"text-anchor":"middle","font-family":"IBM Plex Mono,monospace"});t.textContent=VS+"V";
   if(on){
     e("path",{d:`M64,36 C80,36 85,40 ${X(1)},${Y("p")}`,fill:"none",stroke:"#d32f2f","stroke-width":3,"stroke-linecap":"round"});
-    e("path",{d:`M64,66 C80,66 85,58 ${X(1)},${Y("n")}`,fill:"none",stroke:"#222","stroke-width":3,"stroke-linecap":"round"});
+    const nx=X(1),ny=Y("n2"),my=250;
+    if(st.brk==="I"&&isA){
+      e("path",{d:`M35,76 L35,${my}`,fill:"none",stroke:"#222","stroke-width":3});
+      e("path",{d:`M35,${my} L35,${ny} L${nx},${ny}`,fill:"none",stroke:"#d32f2f","stroke-width":2.6});
+      e("circle",{cx:35,cy:my,r:12,fill:"#fff",stroke:"#e6b92e","stroke-width":3});
+      t=e("text",{x:35,y:my+4.5,"font-size":12,"font-weight":700,"text-anchor":"middle",fill:"#222"});t.textContent="A";
+      t=e("text",{x:52,y:my+26,"font-size":10,"font-weight":700,fill:"#d32f2f"});t.textContent="紅（b 側）";
+      t=e("text",{x:52,y:my-16,"font-size":10,"font-weight":700,fill:"#222"});t.textContent="黑（電源−）";
+    }else{
+      e("path",{d:`M35,76 L35,${ny} L${nx},${ny}`,fill:"none",stroke:"#222","stroke-width":3,"stroke-linejoin":"round"});
+      if(isA){
+        const g=e("g",{class:"brk",tabindex:0,role:"button","aria-label":"拔開 b 點至電源負端的接線並串入電表"});
+        e("circle",{cx:35,cy:my,r:8,fill:"#fff",stroke:"#1f7a5a","stroke-width":1.6,"stroke-dasharray":"3 2"},g);
+        e("path",{d:`M31.5,${my-3.5} L38.5,${my+3.5} M38.5,${my-3.5} L31.5,${my+3.5}`,stroke:"#1f7a5a","stroke-width":2},g);
+        const go=()=>{st.brk="I";st.red=st.black=null;update()};
+        g.addEventListener("click",go);g.addEventListener("keydown",ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();go()}});
+      }
+    }
   }else{
-    e("path",{d:"M64,36 L74,36",stroke:"#d32f2f","stroke-width":3});e("path",{d:"M64,66 L74,66",stroke:"#222","stroke-width":3});
-    t=e("text",{x:35,y:92,fill:"var(--muted)","font-size":11,"text-anchor":"middle"});t.textContent="未接上";
+    e("path",{d:"M64,36 L74,36",stroke:"#d32f2f","stroke-width":3});e("path",{d:"M35,76 L35,86",stroke:"#222","stroke-width":3});
+    t=e("text",{x:35,y:100,fill:"var(--muted)","font-size":11,"text-anchor":"middle"});t.textContent="未接上";
   }
   // 跳線（可作為斷開點）
-  const isA=R().type==="A";
   function jumper(c1,r1,c2,r2,color,brk,name){
     const x1=X(c1),y1=Y(r1),x2=X(c2),y2=Y(r2),mx=(x1+x2)/2,my=(y1+y2)/2;
-    const vert=x1===x2, cx=vert?mx+16:mx, cy=vert?my:my-16;
-    if(brk&&st.brk===brk){
+    const vert=x1===x2;
+    if(brk&&st.brk===brk&&isA){
       const ax=vert?mx+22:mx, ay=vert?my:my-20;
       e("path",{d:`M${x1},${y1} Q${(x1+ax)/2+(vert?10:0)},${(y1+ay)/2-(vert?0:6)} ${ax},${ay}`,fill:"none",stroke:"#d32f2f","stroke-width":2.6});
       e("path",{d:`M${ax},${ay} Q${(x2+ax)/2+(vert?10:0)},${(y2+ay)/2-(vert?0:6)} ${x2},${y2}`,fill:"none",stroke:"#222","stroke-width":2.6});
@@ -406,10 +422,10 @@ function drawBB(){
       const lb=e("text",{x:vert?ax+16:ax+12,y:vert?ay+20:ay-10,"font-size":10,"font-weight":700,fill:"#222"});lb.textContent="黑";
       return;
     }
-    e("path",{d:`M${x1},${y1} Q${cx},${cy} ${x2},${y2}`,fill:"none",stroke:color,"stroke-width":3.2,"stroke-linecap":"round"});
+    e("path",{d:`M${x1},${y1} L${x2},${y2}`,fill:"none",stroke:color,"stroke-width":3.2,"stroke-linecap":"round"});
     [[x1,y1],[x2,y2]].forEach(([x,y])=>e("circle",{cx:x,cy:y,r:3,fill:color}));
     if(brk&&isA){
-      const px=vert?mx+12:mx, py=vert?my:my-8;
+      const px=vert?mx+12:mx, py=vert?my:my-9;
       const g=e("g",{class:"brk",tabindex:0,role:"button","aria-label":"拔開"+name+"的接線並串入電表"});
       e("circle",{cx:px,cy:py,r:8,fill:"#fff",stroke:"#1f7a5a","stroke-width":1.6,"stroke-dasharray":"3 2"},g);
       e("path",{d:`M${px-3.5},${py-3.5} L${px+3.5},${py+3.5} M${px+3.5},${py-3.5} L${px-3.5},${py+3.5}`,stroke:"#1f7a5a","stroke-width":2},g);
@@ -417,16 +433,15 @@ function drawBB(){
       g.addEventListener("click",go);g.addEventListener("keydown",ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();go()}});
     }
   }
-  // 電阻
-  const RS=[["Rs",3,"c",8,"c"],["Rp1",11,"b",16,"b"],["Rp2",11,"d",16,"d"],["R3",8,"g",12,"g"],["R4",12,"h",16,"h"]];
+  // 電阻（位置依教師版圖 3-6）：470Ω 由＋軌直插；220Ω 上排、330Ω 下排並聯於第 7、13 行；270Ω 接到 c，390Ω 跨溝槽
+  const RS=[["Rs",5,"p",5,"b"],["Rp1",7,"d",13,"d"],["Rp2",7,"h",13,"h"],["R3",9,"b",15,"b"],["R4",15,"d",15,"h"]];
   RS.forEach(([k,c1,r1,c2,r2])=>colorRes(X(c1),Y(r1),X(c2),Y(r2),nominal[k],k,B));
-  jumper(3,"a",3,"p","#d32f2f",null);
-  jumper(8,"a",11,"a","#7b3fb5","I1","a 點至 R1");
-  jumper(8,"e",8,"f","#7b3fb5","I2","a 點至 R2");
-  jumper(16,"f",16,"e","#7b3fb5",null);
-  jumper(16,"a",16,"n","#333","I","b 點至電源負端");
+  jumper(5,"c",7,"c","#7b3fb5","I1","a 點至 R1（220Ω//330Ω）");
+  jumper(5,"a",9,"a","#7b3fb5","I2","a 點至 R2（270Ω）");
+  jumper(7,"e",7,"f","#555",null);jumper(13,"e",13,"f","#555",null);
+  jumper(13,"j",13,"n2","#555",null);jumper(15,"j",15,"n2","#555",null);
   // 量測節點
-  [["P",3,"e","+"],["a",8,"d","a"],["c",12,"j","c"],["b",16,"j","b"]].forEach(([id,c,r,lab])=>{
+  [["P",4,"p","+"],["a",5,"d","a"],["c",15,"c","c"],["b",13,"i","b"]].forEach(([id,c,r,lab])=>{
     const x=X(c),y=Y(r);
     const hit=e("circle",{cx:x,cy:y,r:11,class:"node-hit",tabindex:0,role:"button","aria-label":"麵包板節點 "+lab});
     const ring=st.red===id?"#d32f2f":st.black===id?"#222":null;

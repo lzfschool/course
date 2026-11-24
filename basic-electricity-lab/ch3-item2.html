@@ -126,7 +126,7 @@ footer{font-size:12.5px;color:var(--muted)}
       <div class="svgbox" id="schBox"><svg class="circuit" id="circ" viewBox="-70 0 710 300" role="img" aria-label="梯形串並聯電阻網路（圖 3-7）"></svg></div>
       <div class="svgbox" id="bbBox" hidden>
         <svg class="circuit" id="bb" viewBox="0 0 650 360" role="img" aria-label="麵包板接線圖"></svg>
-        <p class="hint" style="margin:6px 0 0">上排 R3、R2、R1 依序串接；R6、R5、R4 從上半部跨過中間溝槽到下半部，再用紫色跳線接到下方藍色軌，藍色軌就是 b 端。</p>
+        <p class="hint" style="margin:6px 0 0">依教師版圖 3-7 排列：上方＋軌就是 a 端，R3 由＋軌直插下來；R2、R1 在上半部依序串接；R6、R5、R4 跨過中間溝槽到下半部，再用跳線接到下方−軌，−軌就是 b 端。</p>
       </div>
       <div class="legend" id="ccLegend"></div>
       <div>
@@ -300,21 +300,22 @@ function drawBB(){
   }
   "abcdefghij".split("").forEach(r=>{e("text",{x:90,y:Y(r)+3,fill:"#8a8a80","font-size":9,"text-anchor":"middle","font-family":"IBM Plex Mono,monospace"}).textContent=r});
   // 化簡框（麵包板也標示）
-  const RS=[["R3",4,"c",8,"c"],["R2",8,"c",12,"c"],["R1",12,"c",16,"c"],["R6",8,"e",8,"h"],["R5",12,"e",12,"h"],["R4",16,"e",16,"h"]];
+  // 依教師版圖 3-7 麵包板：a 在上方＋軌，R3 由軌道直插下來，R6、R5、R4 跨過中間溝槽
+  const RS=[["R3",5,"p",5,"b"],["R2",5,"c",11,"c"],["R1",11,"b",17,"b"],["R6",5,"e",5,"i"],["R5",11,"e",11,"i"],["R4",17,"e",17,"i"]];
   RS.forEach(([k,c1,r1,c2,r2])=>colorRes(B,X(c1),Y(r1),X(c2),Y(r2),nominal[k],k));
   RS.forEach(([k,c1,r1,c2,r2])=>{const vert=c1===c2;e("text",{x:vert?X(c1)+13:(X(c1)+X(c2))/2,y:vert?(Y(r1)+Y(r2))/2+4:Y(r1)-14,"font-size":11,"font-weight":700,fill:"#1f7a5a","text-anchor":vert?"start":"middle"}).textContent=k});
   function jumper(c1,r1,c2,r2){
     const x1=X(c1),y1=Y(r1),x2=X(c2),y2=Y(r2),mx=(x1+x2)/2,my=(y1+y2)/2,vert=x1===x2;
-    e("path",{d:`M${x1},${y1} Q${vert?mx+16:mx},${vert?my:my-16} ${x2},${y2}`,fill:"none",stroke:"#7b3fb5","stroke-width":3.2,"stroke-linecap":"round"});
+    e("path",{d:`M${x1},${y1} L${x2},${y2}`,fill:"none",stroke:"#7b3fb5","stroke-width":3.2,"stroke-linecap":"round"});
     [[x1,y1],[x2,y2]].forEach(([x,y])=>e("circle",{cx:x,cy:y,r:3,fill:"#7b3fb5"}));
   }
-  jumper(8,"j",8,"n2");jumper(12,"j",12,"n2");jumper(16,"j",16,"n2");
-  [["a",4,"a"],["c",8,"a"],["d",12,"a"],["e",16,"a"],["b",4,"n2"]].forEach(([id,c,r])=>{
+  jumper(5,"j",5,"n2");jumper(11,"j",11,"n2");jumper(17,"j",17,"n2");
+  [["a",4,"p"],["c",4,"b"],["d",12,"c"],["e",18,"b"],["b",4,"n2"]].forEach(([id,c,r])=>{
     const x=X(c),y=Y(r);
     const hit=e("circle",{cx:x,cy:y,r:11,class:"node-hit",tabindex:0,role:"button","aria-label":"麵包板節點 "+id});
     const ring=st.red===id?"#d32f2f":st.black===id?"#222":null;
     e("circle",{cx:x,cy:y,r:7,fill:"none",stroke:ring||"#1f7a5a","stroke-width":ring?3.5:1.6,"stroke-dasharray":ring?"":"2 2","pointer-events":"none"});
-    e("text",{x:x-12,y:y+(r==="n2"?-8:5),"font-size":15,"font-weight":700,"font-style":"italic","font-family":"Georgia,serif",fill:"#c0392b","text-anchor":"end"}).textContent=id;
+    if(id==="a"||id==="b")e("text",{x:x-12,y:y+(r==="n2"?-8:5),"font-size":15,"font-weight":700,"font-style":"italic","font-family":"Georgia,serif",fill:"#c0392b","text-anchor":"end"}).textContent=id;
     if(ring)e("text",{x:x+10,y:y+(r==="n2"?-8:-8),"font-size":10,"font-weight":700,fill:ring}).textContent=st.red===id?"紅棒":"黑棒";
     const go=()=>clickNode(id);
     hit.addEventListener("click",go);hit.addEventListener("keydown",ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();go()}});
