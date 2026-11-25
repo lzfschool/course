@@ -215,7 +215,7 @@ const E=9, VF=1.8, RLED=10, RG=100;
 const BOOK={R1:6800,R2:22000,R3:15000,R4:33000};
 const nominal={...BOOK};
 const actual={};
-const st={vflip:false,power:false,vrMax:100000,vr:100000,vrOut:false,ind:"v",range:"V20",red:null,black:null,showVR:false,tol:true};
+const st={brk:null,flip:false,vflip:false,power:false,vrMax:100000,vr:100000,vrOut:false,ind:"v",range:"V20",red:null,black:null,showVR:false,tol:true};
 function reroll(){for(const k in nominal)actual[k]=st.tol?nominal[k]*(1+(Math.random()*2-1)*0.05):nominal[k]}
 reroll();
 const E12=[];[10,100,1000,10000,100000].forEach(m=>[10,12,15,18,22,27,33,39,47,56,68,82].forEach(v=>E12.push(v*m/10)));E12.push(1000000);
@@ -376,7 +376,27 @@ function drawSch(sol){
     const x=st.ind==="led"?(sol.Ig>0?350:290):320;
     el("path",{d:sol.Ig>0?`M${x},72 L${x},228`:`M${x},228 L${x},72`,class:"flow",opacity:.8},S);
   }
-  const NODES=[["a",130,150,"a",-14,5],["b",520,150,"b",14,5],["c",320,70,"c",0,-12],["d",320,230,"d",0,24]];
+  if(R().type==="A"){
+    // [id, x, y, 紅棒位置, 黑棒位置]（紅棒在電流流入的一側）
+    const BK=[["IT",95,150,[-22,-12],[22,-12],"R1 支路"],["I1",130,105,[-20,22],[-20,-12],"R2 支路"],["I2",130,195,[-20,-12],[-20,22],"R4 支路"]];
+    BK.forEach(([id,x,y,pr,pb,name])=>{
+      if(st.brk===id){
+        el("circle",{cx:x,cy:y,r:13,fill:"var(--panel)",stroke:"var(--meter)","stroke-width":3},S);
+        el("text",{x,y:y+5,"text-anchor":"middle","font-size":13,"font-weight":700,fill:"var(--ink)"},S).textContent="A";
+        const P1=st.flip?pb:pr,P2=st.flip?pr:pb;
+        el("text",{x:x+P1[0],y:y+P1[1],class:"probe-tag",fill:"var(--red)","text-anchor":"middle"},S).textContent="紅";
+        el("text",{x:x+P2[0],y:y+P2[1],class:"probe-tag",fill:"var(--black)","text-anchor":"middle"},S).textContent="黑";
+        return;
+      }
+      const g=el("g",{style:"cursor:pointer",tabindex:0,role:"button","aria-label":"在"+name+"斷開並串入電表"},S);
+      el("circle",{cx:x,cy:y,r:9,fill:"var(--panel)",stroke:"var(--accent)","stroke-width":1.6,"stroke-dasharray":"3 2"},g);
+      el("path",{d:`M${x-4},${y-4} L${x+4},${y+4} M${x+4},${y-4} L${x-4},${y+4}`,stroke:"var(--accent)","stroke-width":2},g);
+      el("title",{},g).textContent="在"+name+"斷開並串入電表";
+      const go=()=>{st.brk=id;st.flip=false;update()};
+      g.addEventListener("click",go);g.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go()}});
+    });
+  }
+  const NODES=[["a",130,150,"a",-14,5],["b",520,150,"b",14,5],["c",320,70,"c",0,-12],["d",320,230,"d",0,24],["p",60,300,"+",-12,5]];
   if(st.vrOut)NODES.push(["v1",380,270,"",0,0],["v2",480,270,"",0,0]);
   NODES.forEach(([id,x,y,lab,dx,dy])=>{
     el("circle",{cx:x,cy:y,r:5,class:"node"},S);
@@ -428,12 +448,29 @@ function drawBB(sol){
   }
   // 依教師版圖 3-11 麵包板：R1 由＋軌直插到第 4 行（a）；上半部 R2（a→c）、R3（c→b）；
   // 第 4 行跨溝槽到下半部接 R4（a→d）；c、d 之間的指示器跨過溝槽；d 經跳線接 VR，VR 另一端經第 19 行回到 b
-  colorRes(B,X(4),Y("p"),X(4),Y("a"),nominal.R1,"R1");
-  colorRes(B,X(4),Y("d"),X(10),Y("d"),nominal.R2,"R2");
+  const BRK=R().type==="A"?st.brk:null;
+  function ammeter(c1,r1,c2,r2,side){
+    const x1=X(c1),y1=Y(r1),x2=X(c2),y2=Y(r2),mx=(x1+x2)/2,my=y1+side;
+    const cR=st.flip?"#222":"#d32f2f",cB=st.flip?"#d32f2f":"#222";
+    e("path",{d:`M${x1},${y1} L${x1},${my} L${mx},${my}`,fill:"none",stroke:cR,"stroke-width":2.6});
+    e("path",{d:`M${mx},${my} L${x2},${my} L${x2},${y2}`,fill:"none",stroke:cB,"stroke-width":2.6});
+    [[x1,y1,cR],[x2,y2,cB]].forEach(([x,y,c])=>e("circle",{cx:x,cy:y,r:3,fill:c}));
+    e("circle",{cx:mx,cy:my,r:11,fill:"#fff",stroke:"#e6b92e","stroke-width":3});
+    e("text",{x:mx,y:my+4.5,"font-size":12,"font-weight":700,"text-anchor":"middle",fill:"#222"}).textContent="A";
+  }
+  // 量 IT：R1 改插第 2 行，電表接第 2 行（R1 側，紅）→ 第 4 行（a，黑）
+  colorRes(B,X(BRK==="IT"?2:4),Y("p"),X(BRK==="IT"?2:4),Y("a"),nominal.R1,"R1");
+  if(BRK==="IT")ammeter(2,"b",4,"b",-14);
+  // 量 I1：R2 左腳改插第 6 行，電表接第 4 行（a，紅）→ 第 6 行（黑）
+  colorRes(B,X(BRK==="I1"?6:4),Y("d"),X(10),Y("d"),nominal.R2,"R2");
+  if(BRK==="I1")ammeter(4,"b",6,"b",-14);
   colorRes(B,X(10),Y("c"),X(16),Y("c"),nominal.R3,"R3");
   jumper(16,"b",19,"b","#555",0);
   jumper(4,"e",4,"f","#555",0);jumper(19,"e",19,"f","#555",0);
-  colorRes(B,X(4),Y("g"),X(10),Y("g"),nominal.R4,"R4");
+  // 量 I2：R4 左腳改插第 6 行，電表接第 4 行（a，紅）→ 第 6 行（黑）
+  colorRes(B,X(BRK==="I2"?6:4),Y("g"),X(10),Y("g"),nominal.R4,"R4");
+  if(BRK==="I2")ammeter(4,"j",6,"j",14);
+  if(BRK)e("text",{x:X(22),y:Y("n")-6,"font-size":11,"font-weight":700,fill:"#b8860b"}).textContent="電流表串入 "+{IT:"R1 支路",I1:"R2 支路",I2:"R4 支路"}[BRK];
   jumper(16,"a",16,"n","#333",0);   // b 接電源負端（上方藍軌）
   // c、d 之間的指示器
   if(st.ind==="led"){
@@ -473,7 +510,7 @@ function drawBB(sol){
   // 元件標籤
   [["R1",4,"n",14],["R2",7,"d",0],["R3",13,"c",0],["R4",7,"g",0]].forEach(([t,c,r,dx])=>e("text",{x:X(c)+dx,y:Y(r)-(dx?-14:12),"font-size":11,"font-weight":700,fill:"#1f7a5a","text-anchor":dx?"start":"middle"}).textContent=t);
   // 量測點（位置同教師版：a、c、b、d）
-  const pts=[["a",4,"c"],["b",16,"d"],["c",10,"b"],["d",10,"h"]];
+  const pts=[["a",4,"c"],["b",16,"d"],["c",10,"b"],["d",10,"h"],["p",3,"p"]];
   if(st.vrOut)pts.push(["v1",X(17)-24,null],["v2",X(17)+24,null]);
   pts.forEach(([id,c,r])=>{
     const x=r?X(c):c,y=r?Y(r):376;
@@ -488,6 +525,7 @@ function drawBB(sol){
 }
 function clickNode(id){
   if(R().type==="off"){st._err="電表在 OFF 檔，請先轉到量測檔位。";update();return}
+  if(R().type==="A"){st._err="電流檔不可並聯在兩點之間，會造成短路！請點線路上的 ✕，把電表串入。";update();return}
   if(!st.red||(st.red&&st.black)){st.red=id;st.black=null}
   else if(id!==st.red){st.black=id}
   update();
@@ -507,6 +545,8 @@ function drawKnob(){
 const RANGES=[
   {grp:"DCV 直流電壓"},
   {id:"V2",type:"V",label:"2V",full:1.999,k:1,unit:"V",dec:3},{id:"V20",type:"V",label:"20V",full:19.99,k:1,unit:"V",dec:2},{id:"V200",type:"V",label:"200V",full:199.9,k:1,unit:"V",dec:1},
+  {grp:"DCA 直流電流"},
+  {id:"A2",type:"A",label:"2mA",full:1.999,k:1,unit:"mA",dec:3},{id:"A20",type:"A",label:"20mA",full:19.99,k:1,unit:"mA",dec:2},
   {grp:"Ω 電阻"},
   {id:"R200",type:"ohm",label:"200Ω",full:199.9,k:1,unit:"Ω",dec:1},{id:"R2k",type:"ohm",label:"2kΩ",full:1.999,k:1e-3,unit:"kΩ",dec:3},{id:"R20k",type:"ohm",label:"20kΩ",full:19.99,k:1e-3,unit:"kΩ",dec:2},{id:"R200k",type:"ohm",label:"200kΩ",full:199.9,k:1e-3,unit:"kΩ",dec:1},
   {grp:""},{id:"OFF",type:"off",label:"OFF"}];
@@ -516,7 +556,7 @@ function buildDial(){
   RANGES.forEach(r=>{
     if(r.grp!==undefined){if(r.grp){const s=document.createElement("div");s.className="grp";s.textContent=r.grp;d.appendChild(s)}return}
     const b=document.createElement("button");b.type="button";b.textContent=r.label;b.className=st.range===r.id?"on":"";b.setAttribute("aria-pressed",st.range===r.id);
-    b.addEventListener("click",()=>{st.range=r.id;buildDial();update()});d.appendChild(b)});
+    b.addEventListener("click",()=>{const prev=R().type;st.range=r.id;if(prev!==r.type){st.brk=null;st.flip=false;if(r.type==="A"){st.red=st.black=null}}buildDial();update()});d.appendChild(b)});
 }
 const nm=id=>id==="v1"||id==="v2"?"VR"+id.slice(1):id;
 function show(r,base){const v=base*r.k,a=Math.abs(v);if(!isFinite(v)||a>r.full+Math.pow(10,-r.dec)/2)return {ol:true,sign:"",digits:" 1."};
@@ -524,6 +564,15 @@ function show(r,base){const v=base*r.k,a=Math.abs(v);if(!isFinite(v)||a>r.full+M
 function reading(sol){
   const r=R(),out={sign:"",digits:"",unit:r.unit||"",ol:false,msg:"",lvl:"",log:null};
   if(r.type==="off"){out.msg="電表在 OFF 檔。";return out}
+  if(r.type==="A"){
+    if(!st.brk){out.digits=(0).toFixed(r.dec);out.msg="電流檔須串聯：點電路上的 ✕（R1、R2、R4 支路），斷開該處把電表串進去。";return out}
+    const NM={IT:`IT（流過 R1）`,I1:`I1（流過 R2、R3）`,I2:`I2（流過 R4、VR）`};
+    const I=(st.power?sol[st.brk]:0)*1000*(st.flip?-1:1);Object.assign(out,show(r,I));
+    if(!st.power){out.msg="電源尚未接上，電流為 0。";out.lvl="warn";return out}
+    if(out.ol){out.msg=`超過 ${r.label} 檔！請改用較大的電流檔。`;out.lvl="bad";return out}
+    out.log=`${NM[st.brk]} = ${out.sign}${out.digits} mA${st.flip?"（紅黑棒對調）":""}　[DCA ${r.label}，VR ${st.vr}Ω]`;
+    out.msg=(st.flip?"【紅黑棒已對調，讀值正負相反】":"")+`${NM[st.brk]} = ${out.sign}${out.digits} mA`;out.lvl="ok";return out;
+  }
   if(!st.red||!st.black){
     Object.assign(out,r.type==="ohm"?{digits:" 1.",ol:true}:{digits:(0).toFixed(r.dec)});
     out.msg=r.type==="ohm"?"點兩個量測點量電阻（電源須先移開）。拆下 VR 後，可量 VR 的兩個端子。":"點兩個量測點：第一下紅棒，第二下黑棒。";return out}
@@ -538,7 +587,7 @@ function reading(sol){
     return out;
   }
   if(st.red.startsWith("v")||st.black.startsWith("v")){out.digits=(0).toFixed(r.dec);out.msg="拆下的 VR 沒有接在電路上，電壓為 0。";out.lvl="warn";return out}
-  const V={a:sol.Va,b:sol.Vb,c:sol.Vc,d:sol.Vd};const v=V[st.red]-V[st.black];
+  const V={p:st.power?E:0,a:sol.Va,b:sol.Vb,c:sol.Vc,d:sol.Vd};const v=V[st.red]-V[st.black];
   Object.assign(out,show(r,v));
   if(!st.power){out.msg="電源尚未接上，電壓為 0。";out.lvl="warn";return out}
   if(out.ol){out.msg=`超過 ${r.label} 檔，請改用較大的電壓檔。`;out.lvl="bad";return out}
@@ -598,7 +647,10 @@ function makeSheet(){const n=nominal,o=ohmTxt,bn=Math.round(balNom());SHEET=[
   {k:"I2",label:`I2 = Vab ÷ (VR + ${o(n.R4)})，VR 以 ${bn}Ω 計`,unit:"mA",type:"calc",tol:0.03,exp:()=>balSol().Va/(balNom()+nominal.R4)*1000},
   {sec:"6-(3) 問答"},
   {k:"q3",label:"Vcd 是否為 0V？",type:"yn"},
-  {k:"q4",label:"I1 與 I2 是否相等？",type:"yn"}];}
+  {k:"q4",label:"I1 與 I2 是否相等？",type:"yn"},
+  {sec:"7. 補充：平衡時各電阻的電壓與電流（DCV 20V 檔、DCA 2mA 檔；VR 調在平衡點）"},
+  ...[["R1",s=>E-s.Va],["R2",s=>s.Va-s.Vc],["R3",s=>s.Vc],["R4",s=>s.Va-s.Vd],["VR",s=>s.Vd]].map(([k,fn])=>({k:"v"+k,label:`V（${k}${k==="VR"?"":" "+o(n[k])}）=`,unit:"V",type:"meas",exp:()=>fn(balSol())})),
+  ...[["R1","IT"],["R2","I1"],["R3","I1"],["R4","I2"],["VR","I2"]].map(([k,f])=>({k:"i"+k,label:`I（${k}${k==="VR"?"":" "+o(n[k])}）=`,unit:"mA",type:"meas",exp:()=>balSol()[f]*1000}))];}
 const KEY="ws3-sheet";let saved={};try{saved=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){}
 function buildSheet(){
   makeSheet();
@@ -655,7 +707,7 @@ $("#vrOutBtn").addEventListener("click",()=>{st.vrOut=!st.vrOut;st.red=st.black=
   if(st.vrOut){st._info="VR 已拆下，旋鈕位置不變。切到 Ω 檔，點拆下的 VR 兩端量電阻。"}update()});
 $("#showVR").addEventListener("change",e=>{st.showVR=e.target.checked;update()});
 $("#clearProbe").addEventListener("click",()=>{st.red=st.black=null;update()});
-$("#swapBtn").addEventListener("click",()=>{if(st.red&&st.black){[st.red,st.black]=[st.black,st.red]}else{st._info="先把兩支表棒都接好再對調。"}update()});
+$("#swapBtn").addEventListener("click",()=>{if(R().type==="A"&&st.brk){st.flip=!st.flip}else if(st.red&&st.black){[st.red,st.black]=[st.black,st.red]}else{st._info="先把兩支表棒都接好再對調。"}update()});
 $("#vFlip").addEventListener("click",()=>{st.vflip=!st.vflip;st._info=st.vflip?"c、d 間電壓表的紅黑棒已對調：紅棒接 d、黑棒接 c，顯示的是 Vdc。":"電壓表恢復紅棒接 c、黑棒接 d（顯示 Vcd）。";update()});
 $("#logBtn").addEventListener("click",()=>{const o=st._last;if(!o||!o.log){$("#msg").textContent="目前沒有有效讀值可記錄。";$("#msg").className="msg warn";return}
   const li=document.createElement("li");li.textContent=o.log;$("#log").prepend(li)});
@@ -696,6 +748,16 @@ $("#reroll").addEventListener("click",()=>{reroll();fillAns();st._info=st.tol?"�
 const F_=(v,d=2)=>(+v).toFixed(d),P_=(a,b)=>a*b/(a+b);
 const B_=()=>{const n=nominal,vr=balNom(),Rb=P_(n.R2+n.R3,n.R4+vr),Va=E*Rb/(n.R1+Rb);return {n,vr,Rb,Va,Vc:Va*n.R3/(n.R2+n.R3),Vd:Va*vr/(n.R4+vr)}};
 const HOW_={
+  vR1:()=>{const b=B_();return `9 − Vab = 9 − ${F_(b.Va,3)} = ${F_(E-b.Va,3)}V`},
+  vR2:()=>{const b=B_();return `Vab − Vcb = ${F_(b.Va,3)} − ${F_(b.Vc,3)} = ${F_(b.Va-b.Vc,3)}V`},
+  vR3:()=>{const b=B_();return `= Vcb = ${F_(b.Vc,3)}V`},
+  vR4:()=>{const b=B_();return `Vab − Vdb = ${F_(b.Va,3)} − ${F_(b.Vd,3)} = ${F_(b.Va-b.Vd,3)}V`},
+  vVR:()=>{const b=B_();return `= Vdb = ${F_(b.Vd,3)}V`},
+  iR1:()=>{const b=B_();return `IT = (9 − Vab) ÷ R1 = ${F_(E-b.Va,3)} ÷ ${ohmTxt(b.n.R1)} = ${F_((E-b.Va)/b.n.R1*1000,4)}mA（= I1 + I2）`},
+  iR2:()=>{const b=B_();return `I1 = Vab ÷ (R2 + R3) = ${F_(b.Va/(b.n.R2+b.n.R3)*1000,4)}mA`},
+  iR3:()=>{const b=B_();return `與 R2 串聯，= I1 = ${F_(b.Va/(b.n.R2+b.n.R3)*1000,4)}mA`},
+  iR4:()=>{const b=B_();return `I2 = Vab ÷ (R4 + VR) = ${F_(b.Va/(b.n.R4+b.vr)*1000,4)}mA`},
+  iVR:()=>{const b=B_();return `與 R4 串聯，= I2 = ${F_(b.Va/(b.n.R4+b.vr)*1000,4)}mA`},
   m0:()=>{const n=nominal,M=st.vrMax,Rb=P_(n.R2+n.R3,n.R4+M),Va=E*Rb/(n.R1+Rb),Vc=Va*n.R3/(n.R2+n.R3),Vd=Va*M/(n.R4+M);
     return `VR = ${ohmTxt(M)}：電橋 ${ohmTxt(n.R2+n.R3)}//${ohmTxt(n.R4+M)} = ${F_(Rb/1000,2)}kΩ；Vab = ${E}×${F_(Rb/1000,2)}÷(${F_(n.R1/1000,1)}+${F_(Rb/1000,2)}) = ${F_(Va,3)}V；Vc = ${F_(Vc,3)}V、Vd = ${F_(Vd,3)}V；Vcd = ${F_(Vc-Vd,3)}V`},
   mVR:()=>{const n=nominal;return `平衡條件 VR×R2 = R3×R4 → VR = ${n.R3}×${n.R4}÷${n.R2} = ${F_(balNom(),0)}Ω`},
