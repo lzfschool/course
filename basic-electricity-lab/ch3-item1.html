@@ -329,7 +329,7 @@ function draw(){
   t=el("text",{x:30,y:186,class:"lbl","text-anchor":"middle"},g);t.textContent=VS+"V";
   if(!st.power){t=el("text",{x:30,y:214,class:"lbl small","text-anchor":"middle"});t.textContent="未接上"}
   // 斷開點（電流檔）
-  const brks=[["I",180,300,"b 點至電源負端"],["I1",300,90,"a 點至 R1"],["I2",500,88,"a 點至 R2"]];
+  const brks=[["I",180,300,"b 點至電源負端"],["I1",300,90,"a 點至 R1"],["I2",500,88,"a 點至 R2"],["I220",260,128,"220Ω 分路"],["I330",340,128,"330Ω 分路"]];
   const isA=R().type==="A";
   brks.forEach(([id,x,y,name])=>{
     if(st.brk===id){
@@ -443,7 +443,27 @@ function drawBB(){
   }
   // 電阻（位置依教師版圖 3-6）：470Ω 由＋軌直插；220Ω 上排、330Ω 下排並聯於第 7、13 行；270Ω 接到 c，390Ω 跨溝槽
   const RS=[["Rs",5,"p",5,"a"],["Rp1",7,"d",13,"d"],["Rp2",7,"h",13,"h"],["R3",9,"a",15,"a"],["R4",15,"d",15,"h"]];
+  if(isA&&st.brk==="I220")RS[1]=["Rp1",8,"d",13,"d"];
+  if(isA&&st.brk==="I330")RS[2]=["Rp2",8,"h",13,"h"];
   RS.forEach(([k,c1,r1,c2,r2])=>colorRes(X(c1),Y(r1),X(c2),Y(r2),nominal[k],k,B));
+  // 220Ω、330Ω 個別的電流量測點：電表接在第 7 行與第 8 行之間（電阻左腳改插第 8 行）
+  [["I220","a",-14,"220Ω 分路"],["I330","j",14,"330Ω 分路"]].forEach(([id,row,side,name])=>{
+    if(!isA)return;
+    const x1=X(7),x2=X(8),y=Y(row),mx=(x1+x2)/2,my=y+side;
+    if(st.brk===id){
+      const cR=st.flip?"#222":"#d32f2f",cB=st.flip?"#d32f2f":"#222";
+      e("path",{d:`M${x1},${y} L${x1},${my} L${mx},${my}`,fill:"none",stroke:cR,"stroke-width":2.6});
+      e("path",{d:`M${mx},${my} L${x2},${my} L${x2},${y}`,fill:"none",stroke:cB,"stroke-width":2.6});
+      e("circle",{cx:mx,cy:my,r:11,fill:"#fff",stroke:"#e6b92e","stroke-width":3});
+      const tt=e("text",{x:mx,y:my+4.5,"font-size":12,"font-weight":700,"text-anchor":"middle",fill:"#222"});tt.textContent="A";
+    }else{
+      const g=e("g",{class:"brk",tabindex:0,role:"button","aria-label":"把電表串入"+name});
+      e("circle",{cx:mx,cy:my,r:8,fill:"#fff",stroke:"#1f7a5a","stroke-width":1.6,"stroke-dasharray":"3 2"},g);
+      e("path",{d:`M${mx-3.5},${my-3.5} L${mx+3.5},${my+3.5} M${mx+3.5},${my-3.5} L${mx-3.5},${my+3.5}`,stroke:"#1f7a5a","stroke-width":2},g);
+      const go=()=>{st.brk=id;st.flip=false;st.red=st.black=null;update()};
+      g.addEventListener("click",go);g.addEventListener("keydown",ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();go()}});
+    }
+  });
   jumper(5,"c",7,"c","#7b3fb5","I1","a 點至 R1（220Ω//330Ω）");
   jumper(5,"b",9,"b","#7b3fb5","I2","a 點至 R2（270Ω）");
   jumper(7,"e",7,"f","#555",null);jumper(13,"e",13,"f","#555",null);
@@ -545,7 +565,7 @@ function reading(){
   }
   if(r.type==="A"){
     if(!st.brk){out.digits=(0).toFixed(r.dec);out.msg="電流檔須串聯：點線路上的 ✕，斷開該處並把電表接進去。";return out}
-    const map={I:["I",sol.I],I1:["I1",sol.I1],I2:["I2",sol.I2]};
+    const map={I:["I",sol.I],I1:["I1",sol.I1],I2:["I2",sol.I2],I220:[`I（${ohmTxt(nominal.Rp1)}）`,sol.Vab/actual.Rp1],I330:[`I（${ohmTxt(nominal.Rp2)}）`,sol.Vab/actual.Rp2]};
     const [name,a]=map[st.brk];const mA=st.power?(st.flip?-a:a)*1000:0, d=show(r,mA);
     Object.assign(out,d);
     if(!st.power){out.msg="電源尚未接上，電流為 0。";out.lvl="warn";return out}
@@ -614,6 +634,9 @@ function makeSheet(){const n=nominal,o=ohmTxt;SHEET=[
   {k:"cVab",label:"(3) 計算 Vab = I1 × R1",unit:"V",type:"calc",exp:()=>idealF().Vab},
   {k:"cVcb",label:`(3) 計算 Vcb = I2 × ${o(n.R4)}`,unit:"V",type:"calc",exp:()=>idealF().Vcb},
   {k:"q3",label:"(4) 量測值與計算值是否相等？",type:"yn"},
+  {sec:"5. 各電阻的電壓與電流（教師版圖 3-6 左側；接上 9V，DCV 20V 檔、DCA 檔）"},
+  ...[["Rs","P","a"],["Rp1","a","b"],["Rp2","a","b"],["R3","a","c"],["R4","c","b"]].map(([k,p,q])=>({k:"v"+k,label:`V（${o(n[k])}）=`,unit:"V",type:"meas",exp:()=>{const s=solve(actual,VS);return s.node[p]-s.node[q]}})),
+  ...[["Rs",s=>s.I],["Rp1",s=>s.Vab/actual.Rp1],["Rp2",s=>s.Vab/actual.Rp2],["R3",s=>s.I2],["R4",s=>s.I2]].map(([k,fn])=>({k:"i"+k,label:`I（${o(n[k])}）=`,unit:"mA",type:"meas",exp:()=>fn(solve(actual,VS))*1000})),
 ];}
 makeSheet();
 // 電阻選擇與色碼對照
@@ -717,7 +740,17 @@ const HOW_={
   mVab:()=>{const F=idealF();return `理論值 I×Rab = ${F_(F.I*1000)}mA×${F_(F.Rab)}Ω = ${F_(F.Vab,3)}V`},
   mVcb:()=>{const F=idealF();return `理論值 I2×R4 = ${F_(F.I2*1000,3)}mA×${nominal.R4}Ω = ${F_(F.Vcb,3)}V`},
   cVab:()=>{const F=idealF();return `I1×R1 = ${F_(F.I1*1000)}mA×${F_(F.Req1)}Ω = ${F_(F.Vab,3)}V`},
-  cVcb:()=>{const F=idealF();return `I2×R4 = ${F_(F.I2*1000,3)}mA×${nominal.R4}Ω = ${F_(F.Vcb,3)}V`}};
+  cVcb:()=>{const F=idealF();return `I2×R4 = ${F_(F.I2*1000,3)}mA×${nominal.R4}Ω = ${F_(F.Vcb,3)}V`},
+  vRs:()=>{const F=idealF();return `I × ${nominal.Rs}Ω = ${F_(F.I*1000,3)}mA × ${nominal.Rs} = ${F_(F.I*nominal.Rs,3)}V（= E − Vab）`},
+  vRp1:()=>`並聯兩端電壓相同 = Vab = ${F_(idealF().Vab,3)}V`,
+  vRp2:()=>`並聯兩端電壓相同 = Vab = ${F_(idealF().Vab,3)}V`,
+  vR3:()=>{const F=idealF();return `I2 × ${nominal.R3}Ω = ${F_(F.I2*1000,3)}mA × ${nominal.R3} = ${F_(F.I2*nominal.R3,3)}V`},
+  vR4:()=>{const F=idealF();return `I2 × ${nominal.R4}Ω = ${F_(F.I2*1000,3)}mA × ${nominal.R4} = ${F_(F.Vcb,3)}V`},
+  iRs:()=>{const F=idealF();return `總電流 I = E ÷ RT = ${VS} ÷ ${F_(F.RT)} = ${F_(F.I*1000,3)}mA`},
+  iRp1:()=>{const F=idealF();return `Vab ÷ ${nominal.Rp1}Ω = ${F_(F.Vab,3)} ÷ ${nominal.Rp1} = ${F_(F.Vab/nominal.Rp1*1000,3)}mA`},
+  iRp2:()=>{const F=idealF();return `Vab ÷ ${nominal.Rp2}Ω = ${F_(F.Vab,3)} ÷ ${nominal.Rp2} = ${F_(F.Vab/nominal.Rp2*1000,3)}mA`},
+  iR3:()=>`串聯電流相同 = I2 = ${F_(idealF().I2*1000,3)}mA`,
+  iR4:()=>`串聯電流相同 = I2 = ${F_(idealF().I2*1000,3)}mA`};
 const _fillAns=fillAns;
 fillAns=function(){_fillAns();SHEET.forEach(r=>{if(!r.k||!HOW_[r.k])return;const a=document.getElementById("an-"+r.k);if(!a)return;
   let t="";try{t=HOW_[r.k]()}catch(e){}if(t)a.textContent+=(a.textContent?"　｜ 計算：":"計算：")+t})};
