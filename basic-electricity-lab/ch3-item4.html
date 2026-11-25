@@ -343,7 +343,7 @@ function drawSch(sol){
     b.addEventListener("click",go);b.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go()}});
   });
   // 節點
-  const NODES=[["a",320,50,"a",0,-12],["b",320,300,"b",0,24],["c",150,70,"c",-16,4],["d",150,140,"d",-16,6],["e",320,140,"",0,0],["f",320,200,"",0,0]];
+  const NODES=[["a",320,50,"a",0,-12],["b",320,300,"b",0,24],["c",150,70,"c",-16,4],["d",150,140,"d",-16,6],["e",320,140,"e",14,-4],["f",320,200,"f",14,16]];
   NODES.forEach(([id,x,y,lab,dx,dy])=>{
     el("circle",{cx:x,cy:y,r:4.5,class:"node"},S);
     const hit=el("circle",{cx:x,cy:y,r:14,class:"node-hit",tabindex:0,role:"button","aria-label":"量測點 "+id},S);
@@ -584,6 +584,9 @@ function makeSheet(){const n=nominal,o=ohmTxt,c1=()=>9+(n.R2+n.R3)*0.01;SHEET=[
   {sec:"驗證（補充）：兩個 9V 都接上，直接量 560Ω 的電流"},
   {k:"m3",label:"I（兩電源同時作用）=",unit:"mA",type:"meas",exp:()=>solve(actual,9,9).IR*1000},
   {k:"q2",label:"I1 + I2 是否等於兩電源同時作用的電流？",type:"yn"},
+  {sec:"補充：兩個 9V 同時作用時各電阻的電壓與電流（DCV 20V 檔、DCA 20mA 檔；填大小，方向見計算說明）"},
+  ...[["R1","d","b"],["R2","a","e"],["R3","f","b"],["R4","a","b"]].map(([k,p,q])=>({k:"v"+k,label:`V（${k} ${o(n[k])}，${p}–${q}）=`,unit:"V",type:"meas",exp:()=>{const s=solve(actual,9,9);return Math.abs(s.V[p]-s.V[q])}})),
+  ...[["R1","IL"],["R2","IM"],["R3","IM"],["R4","IR"]].map(([k,f])=>({k:"i"+k,label:`I（${k} ${o(n[k])}）=`,unit:"mA",type:"meas",exp:()=>Math.abs(solve(actual,9,9)[f])*1000})),
   {sec:"6. 回答問題"},
   {k:"q1",label:"第 1 項之計算值 I1 與第 5 項之量測值 I 相近？",type:"yn"}];}
 const KEY="ws4-sheet";let saved={};try{saved=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){}
@@ -652,6 +655,14 @@ const HOW_={
   m1:()=>{const n=nominal,p=P_(n.R1,n.R4),v=9*p/(n.R2+n.R3+p);return `左電源短路：R1//R4 = ${F_(p)}Ω；Vab = 9×${F_(p)}÷(${n.R2+n.R3}+${F_(p)}) = ${F_(v,3)}V；I1 = Vab÷${n.R4} = ${F_(v/n.R4*1000)}mA`},
   m2:()=>{const n=nominal,p=P_(n.R2+n.R3,n.R4),v=9*p/(n.R1+p);return `中間電源短路：(R2+R3)//R4 = ${F_(p)}Ω；Vab = 9×${F_(p)}÷(${n.R1}+${F_(p)}) = ${F_(v,3)}V；I2 = Vab÷${n.R4} = ${F_(v/n.R4*1000)}mA`},
   c5:()=>{const n=nominal,a=solve(nominal,0,9).IR*1000,b=solve(nominal,9,0).IR*1000;return `${F_(a)} + ${F_(b)} = ${F_(a+b)}mA`},
+  vR1:()=>{const n=nominal,s=solve(nominal,9,9),I=Math.abs(s.IL);return `|I左| × R1 = ${F_(I*1000,3)}mA × ${n.R1}Ω = ${F_(I*n.R1,3)}V（Vd = Vab − 9 = ${F_(s.V.d,3)}V，${s.V.d<0?"b 端較高，紅棒接 b":"d 端較高，紅棒接 d"}）`},
+  vR2:()=>{const n=nominal,s=solve(nominal,9,9),I=Math.abs(s.IM);return `|I中| × R2 = ${F_(I*1000,3)}mA × ${n.R2}Ω = ${F_(I*n.R2,3)}V（${s.V.e>s.V.a?"e 端較高，紅棒接 e":"a 端較高，紅棒接 a"}）`},
+  vR3:()=>{const n=nominal,s=solve(nominal,9,9),I=Math.abs(s.IM);return `|I中| × R3 = ${F_(I*1000,3)}mA × ${n.R3}Ω = ${F_(I*n.R3,3)}V（${s.V.f<0?"b 端較高，紅棒接 b":"f 端較高，紅棒接 f"}）`},
+  vR4:()=>`= Vab = ${F_(solve(nominal,9,9).Va,3)}V`,
+  iR1:()=>{const n=nominal,s=solve(nominal,9,9);return `I左 = (9 − Vab) ÷ R1 = (9 − ${F_(s.Va,3)}) ÷ ${n.R1} = ${F_(-s.IL*1000,3)}mA（${s.IL<0?"由 b 經 R1、電源流向 a":"由 a 經電源、R1 流向 b"}）`},
+  iR2:()=>{const n=nominal,s=solve(nominal,9,9);return `I中 = (9 − Vab) ÷ (R2 + R3) = (9 − ${F_(s.Va,3)}) ÷ ${n.R2+n.R3} = ${F_(-s.IM*1000,3)}mA（${s.IM<0?"由 b 經 R3、電源、R2 流向 a":"由 a 往下流向 b"}）`},
+  iR3:()=>`與 R2 串聯，電流相同 = ${F_(Math.abs(solve(nominal,9,9).IM)*1000,3)}mA`,
+  iR4:()=>{const n=nominal,s=solve(nominal,9,9);return `Vab ÷ R4 = ${F_(s.Va,3)} ÷ ${n.R4} = ${F_(s.IR*1000,3)}mA（由 a 往下；= I左 + I中 = ${F_(-s.IL*1000,3)} + ${F_(-s.IM*1000,3)}）`},
   m3:()=>{const n=nominal,s=solve(nominal,9,9);return `Vab = (9/${n.R1}+9/${n.R2+n.R3})÷(1/${n.R1}+1/${n.R2+n.R3}+1/${n.R4}) = ${F_(s.Va,3)}V；÷${n.R4} = ${F_(s.IR*1000)}mA`}};
 const _fillAns=fillAns;
 fillAns=function(){_fillAns();SHEET.forEach(r=>{if(!r.k||!HOW_[r.k])return;const a=document.getElementById("an-"+r.k);if(!a)return;
