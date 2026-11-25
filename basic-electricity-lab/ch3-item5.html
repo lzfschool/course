@@ -251,7 +251,7 @@ function solve(R,E1,E2,load){
   const a11=1/R.R1+1/R.R2+gL,a22=1/R.R3+1/R.R4+gL,a12=-gL,det=a11*a22-a12*a12;
   const s1=E1/R.R1,s2=E2/R.R4;
   const Va=(s1*a22-a12*s2)/det,Vb=(a11*s2-a12*s1)/det;
-  return {Va,Vb,IL:(Va-Vb)*gL,V:{p:E1,q:E2,g:0,a:Va,b:Vb}};
+  return {Va,Vb,IL:(Va-Vb)*gL,I1:(E1-Va)/R.R1,I2:Va/R.R2,I3:Vb/R.R3,I4:(E2-Vb)/R.R4,V:{p:E1,q:E2,g:0,a:Va,b:Vb}};
 }
 const cur=()=>solve(actual,st.e1?st.V1:0,st.e2?st.V2:0,st.load);
 const rTh=R=>R.R1*R.R2/(R.R1+R.R2)+R.R3*R.R4/(R.R3+R.R4);
@@ -315,9 +315,9 @@ function drawSch(){
   const w=d=>el("path",{d,class:"wire"},S);
   const T=60,B=270;
   battV(S,90,T,B,st.e1,st.V1,false);
-  w(`M90,${T} L110,${T}`);colorRes(S,110,T,220,T,nominal.R1,"R1");w(`M220,${T} L240,${T}`);
-  colorRes(S,240,T,240,B,nominal.R2,"R2");
-  el("text",{x:165,y:T-18,class:"lbl","text-anchor":"middle"},S).textContent=ohmTxt(nominal.R1);
+  w(`M90,${T} L130,${T}`);colorRes(S,130,T,220,T,nominal.R1,"R1");w(`M220,${T} L240,${T}`);
+  colorRes(S,240,T,240,B-36,nominal.R2,"R2");w(`M240,${B-36} L240,${B}`);
+  el("text",{x:175,y:T-18,class:"lbl","text-anchor":"middle"},S).textContent=ohmTxt(nominal.R1);
   el("text",{x:256,y:162,class:"rname"},S).textContent="";el("text",{x:256,y:178,class:"lbl"},S).textContent=ohmTxt(nominal.R2);
   // 負載 330Ω（含斷點）
   const isA=R().type==="A";
@@ -344,12 +344,28 @@ function drawSch(){
     [262,408].forEach(x=>el("circle",{cx:x,cy:T,r:4,fill:"var(--panel)",stroke:"var(--wire)","stroke-width":2},S));
     el("text",{x:335,y:T+4,class:"small","text-anchor":"middle"},S).textContent="（330Ω 已取出，ab 開路）";
   }
-  colorRes(S,420,T,420,B,nominal.R3,"R3");
+  colorRes(S,420,T,420,B-36,nominal.R3,"R3");w(`M420,${B-36} L420,${B}`);
   el("text",{x:436,y:162,class:"rname"},S).textContent="";el("text",{x:436,y:178,class:"lbl"},S).textContent=ohmTxt(nominal.R3);
-  w(`M420,${T} L440,${T}`);colorRes(S,440,T,540,T,nominal.R4,"R4");w(`M540,${T} L560,${T}`);
-  el("text",{x:490,y:T-18,class:"lbl","text-anchor":"middle"},S).textContent=ohmTxt(nominal.R4);
+  w(`M420,${T} L440,${T}`);colorRes(S,440,T,520,T,nominal.R4,"R4");w(`M520,${T} L560,${T}`);
+  el("text",{x:480,y:T-18,class:"lbl","text-anchor":"middle"},S).textContent=ohmTxt(nominal.R4);
   battV(S,560,T,B,st.e2,st.V2,true);
   w(`M90,${B} L560,${B}`);
+  // R1～R4 的電流斷開點：[id, x, y, 紅棒標籤位置, 黑棒標籤位置, 名稱]（紅棒在電流流入的一側）
+  if(isA)[["R1",112,T,[-18,28],[18,28],"R1 支路（9V 至 a）"],["R2",240,B-18,[-20,-6],[-20,16],"R2 支路（a 至共同點）"],
+    ["R3",420,B-18,[-20,-6],[-20,16],"R3 支路（b 至共同點）"],["R4",540,T,[18,28],[-18,28],"R4 支路（3V 至 b）"]].forEach(([id,x,y,pr,pb,name])=>{
+    if(st.brk===id){
+      const a=el("g",{class:"ammeter"},S);el("circle",{cx:x,cy:y,r:13},a);el("text",{x,y:y+5,"text-anchor":"middle"},a).textContent="A";
+      const P1=st.flip?pb:pr,P2=st.flip?pr:pb;
+      el("text",{x:x+P1[0],y:y+P1[1],class:"probe-tag",fill:"var(--red)","text-anchor":"middle"},S).textContent="紅";
+      el("text",{x:x+P2[0],y:y+P2[1],class:"probe-tag",fill:"var(--black)","text-anchor":"middle"},S).textContent="黑";
+      return;
+    }
+    const b=el("g",{class:"brk",tabindex:0,role:"button","aria-label":"取下"+name+"的連接線並串入電表"},S);
+    el("circle",{cx:x,cy:y,r:9,class:"tgt"},b);
+    el("path",{d:`M${x-4},${y-4} L${x+4},${y+4} M${x+4},${y-4} L${x-4},${y+4}`,class:"x"},b);
+    el("title",{},b).textContent="取下"+name+"的連接線，串入電表";
+    keyAct(b,()=>{st.brk=id;st.flip=false;update()});
+  });
   // 節點
   const NODES=[["a",240,T,"a",0,-24,22,22],["b",420,T,"b",0,-24,-24,22],["p",90,T,"",0,0,0,-12],["q",560,T,"",0,0,0,-12],["g",330,B,"",0,0,0,-12]];
   NODES.forEach(([id,x,y,lab,dx,dy,tx,ty])=>{
@@ -416,11 +432,35 @@ function drawBB(){
     }
     jumper(c,"j",c,"n2","#555",0);
   }
+  const BK=R().type==="A"?st.brk:null,isA0=R().type==="A";
+  const cR=()=>st.flip?"#222":"#d32f2f",cB=()=>st.flip?"#d32f2f":"#222";
+  function meterAt(mx,my){e("circle",{cx:mx,cy:my,r:11,fill:"#fff",stroke:"#e6b92e","stroke-width":3});e("text",{x:mx,y:my+4.5,"font-size":12,"font-weight":700,"text-anchor":"middle",fill:"#222"}).textContent="A"}
+  function brkMark(id,mx,my,name){
+    if(!isA0)return;
+    const g=e("g",{class:"brk",tabindex:0,role:"button","aria-label":"把電表串入"+name});
+    el("circle",{cx:mx,cy:my,r:8,fill:"#fff",stroke:"#1f7a5a","stroke-width":1.6,"stroke-dasharray":"3 2"},g);
+    el("path",{d:`M${mx-3.5},${my-3.5} L${mx+3.5},${my+3.5} M${mx+3.5},${my-3.5} L${mx-3.5},${my+3.5}`,stroke:"#1f7a5a","stroke-width":2},g);
+    keyAct(g,()=>{st.brk=id;st.flip=false;st.red=st.black=null;update()});
+  }
+  // 水平串入：紅棒在 cr 行、黑棒在 cb 行（row a 上方）
+  function amH(cr,cb){const x1=X(cr),x2=X(cb),y=Y("a"),my=y-16,mx=(x1+x2)/2;
+    e("path",{d:`M${x1},${y} L${x1},${my} L${mx},${my}`,fill:"none",stroke:cR(),"stroke-width":2.6});
+    e("path",{d:`M${mx},${my} L${x2},${my} L${x2},${y}`,fill:"none",stroke:cB(),"stroke-width":2.6});meterAt(mx,my)}
+  // 垂直串入：取代 j 列到下方−軌的跳線（紅棒 j、黑棒 −軌）
+  function bj(id,c,name){const x=X(c),y1=Y("j"),y2=Y("n2"),mx=x+16,my=(y1+y2)/2;
+    if(BK===id){
+      e("path",{d:`M${x},${y1} L${mx},${y1+8} L${mx},${my}`,fill:"none",stroke:cR(),"stroke-width":2.6});
+      e("path",{d:`M${mx},${my} L${mx},${y2-8} L${x},${y2}`,fill:"none",stroke:cB(),"stroke-width":2.6});meterAt(mx,my);
+    }else{jumper(c,"j",c,"n2","#555",0);brkMark(id,x,my,name)}}
   vbat(3,st.e1,st.V1);vbat(23,st.e2,st.V2);
-  colorRes(B,X(3),Y("b"),X(9),Y("b"),nominal.R1,"R1");
-  colorRes(B,X(9),Y("e"),X(9),Y("h"),nominal.R2,"R2");jumper(9,"j",9,"n2","#555",0);
-  colorRes(B,X(17),Y("e"),X(17),Y("h"),nominal.R3,"R3");jumper(17,"j",17,"n2","#555",0);
-  colorRes(B,X(17),Y("c"),X(23),Y("c"),nominal.R4,"R4");
+  // 量 I1：R1 左腳改插第 5 行，電表接第 3 行（9V 側，紅）→ 第 5 行（黑）
+  colorRes(B,X(BK==="R1"?5:3),Y("b"),X(9),Y("b"),nominal.R1,"R1");
+  if(BK==="R1")amH(3,5);else brkMark("R1",X(4),Y("a")-9,"R1 支路");
+  colorRes(B,X(9),Y("e"),X(9),Y("h"),nominal.R2,"R2");bj("R2",9,"R2 支路");
+  colorRes(B,X(17),Y("e"),X(17),Y("h"),nominal.R3,"R3");bj("R3",17,"R3 支路");
+  // 量 I4：R4 右腳改插第 21 行，電表接第 23 行（3V 側，紅）→ 第 21 行（黑）
+  colorRes(B,X(17),Y("c"),X(BK==="R4"?21:23),Y("c"),nominal.R4,"R4");
+  if(BK==="R4")amH(23,21);else brkMark("R4",X(22),Y("a")-9,"R4 支路");
   // 負載 330Ω（a 經跳線接到第 11 行）
   const isA=R().type==="A";
   if(st.load){
@@ -460,7 +500,7 @@ function drawBB(){
 }
 function clickNode(id){
   const t=R().type;
-  if(t==="A"){st._err="電流檔不可並聯在兩點之間，會形成短路！要量 330Ω 的電流，請點連接線上的 ✕，取下該線並把電表串聯進去。";update();return}
+  if(t==="A"){st._err="電流檔不可並聯在兩點之間，會形成短路！要量電流，請點線路上的 ✕，取下該線並把電表串聯進去。";update();return}
   if(t==="off"){st._err="電表在 OFF 檔，請先轉到量測檔位。";update();return}
   if(!st.red||(st.red&&st.black)){st.red=id;st.black=null}else if(id!==st.red){st.black=id}
   update();
@@ -490,8 +530,18 @@ function reading(sol){
   const r=R(),out={sign:"",digits:"",unit:r.unit||"",ol:false,msg:"",lvl:"",log:null};
   if(r.type==="off"){out.msg="電表在 OFF 檔。";return out}
   if(r.type==="A"){
+    if(!st.brk){out.digits=(0).toFixed(r.dec);out.msg="電流檔須串聯：點線路上的 ✕（R1、R2、R3、R4 或 330Ω 支路），取下該線並串入電表。";return out}
+    if(st.brk!=="L"){
+      const NM={R1:`I1（R1 ${ohmTxt(nominal.R1)}）`,R2:`I2（R2 ${ohmTxt(nominal.R2)}）`,R3:`I3（R3 ${ohmTxt(nominal.R3)}）`,R4:`I4（R4 ${ohmTxt(nominal.R4)}）`}[st.brk];
+      const I=(st.flip?-1:1)*sol["I"+st.brk[1]]*1000;Object.assign(out,show(r,I));
+      if(out.ol){out.msg=`超過 ${r.label} 檔！請立刻改用較大的電流檔。`;out.lvl="bad";return out}
+      out.log=`${NM} = ${out.sign}${out.digits} mA${st.flip?"（紅黑棒對調）":""}　[${srcTxt()}，DCA ${r.label}]`;
+      if(I<-1e-6)out.msg=`${NM} 讀值為負：電流方向與紅棒進、黑棒出相反，可按「紅黑棒對調」。`,out.lvl="warn";
+      else if(r.id!=="A2"&&Math.abs(I)<r.full/10)out.msg=`${NM} = ${out.digits} mA；讀值偏小，可改用較小的電流檔提高解析度。`,out.lvl="warn";
+      else out.msg=`${NM} = ${out.digits} mA（${srcTxt()}）`,out.lvl="ok";
+      return out;
+    }
     if(!st.load){out.digits=(0).toFixed(r.dec);out.msg="330Ω 已取出，ab 之間開路，沒有負載電流。要驗證等效電路請先接回 330Ω。";out.lvl="warn";return out}
-    if(st.brk!=="L"){out.digits=(0).toFixed(r.dec);out.msg="電流檔須串聯：點 a 與 330Ω 之間連接線上的 ✕，取下該線並串入電表（紅棒接 a 點）。";return out}
     const I=(st.flip?-1:1)*sol.IL*1000;Object.assign(out,show(r,I));
     if(out.ol){out.msg=`超過 ${r.label} 檔！請立刻改用較大的電流檔。`;out.lvl="bad";return out}
     out.log=`IL = ${out.sign}${out.digits} mA　[${srcTxt()}，DCA ${r.label}]`;
@@ -620,7 +670,10 @@ function makeSheet(){const n=nominal,o=ohmTxt;SHEET=[
   {sec:`驗證（補充）：接回 ${o(n.RL)}，比較等效電路與原電路`},
   {k:"c3",label:`等效電路預測 IL = ETh ÷ (RTh + ${o(n.RL)})（用計算值）`,unit:"mA",type:"calc",exp:()=>eTh(n,9,3)/(rTh(n)+n.RL)*1000},
   {k:"m3",label:`原電路實測：串入電表量 ${o(n.RL)} 的電流 IL =`,unit:"mA",type:"meas",exp:()=>solve(actual,9,3,true).IL*1000},
-  {k:"q2",label:"等效電路預測的 IL 與原電路實測是否相近？",type:"yn"}];}
+  {k:"q2",label:"等效電路預測的 IL 與原電路實測是否相近？",type:"yn"},
+  {sec:`補充：原電路（9V、3V 接上，接回 ${o(n.RL)}）各電阻的電壓與電流（DCV 20V 檔、DCA 200mA／20mA 檔）`},
+  ...[["R1","p","a"],["R2","a","g"],["RL","a","b"],["R3","b","g"],["R4","q","b"]].map(([k,p,q])=>({k:"v"+k,label:`V（${k} ${o(n[k])}）=`,unit:"V",type:"meas",exp:()=>{const s=solve(actual,9,3,true);return Math.abs(s.V[p]-s.V[q])}})),
+  ...[["R1","I1"],["R2","I2"],["RL","IL"],["R3","I3"],["R4","I4"]].map(([k,f])=>({k:"i"+k,label:`I（${k} ${o(n[k])}）=`,unit:"mA",type:"meas",exp:()=>Math.abs(solve(actual,9,3,true)[f])*1000}))];}
 const KEY="ws5-sheet";let saved={};try{saved=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){}
 let showAns=false;
 function buildSheet(){
@@ -680,7 +733,18 @@ $("#resetBtn").addEventListener("click",()=>{
 /* 參考答案計算過程 */
 const F_=(v,d=2)=>(+v).toFixed(d),P_=(a,b)=>a*b/(a+b);
 const T5_=()=>{const n=nominal,a=n.R1*n.R2/(n.R1+n.R2),b=n.R3*n.R4/(n.R3+n.R4),Va=9*n.R2/(n.R1+n.R2),Vb=3*n.R3/(n.R3+n.R4);return {n,a,b,Va,Vb,R:a+b,E:Va-Vb}};
+const S5_=()=>solve(nominal,9,3,true);
 const HOW_={
+  vR1:()=>{const s=S5_();return `9 − Va = 9 − ${F_(s.Va,3)} = ${F_(9-s.Va,3)}V（Va 用節點電壓法求得，見 IL 的計算）`},
+  vR2:()=>`= Va = ${F_(S5_().Va,3)}V`,
+  vRL:()=>{const s=S5_();return `Va − Vb = ${F_(s.Va,3)} − ${F_(s.Vb,3)} = ${F_(s.Va-s.Vb,3)}V`},
+  vR3:()=>`= Vb = ${F_(S5_().Vb,3)}V`,
+  vR4:()=>{const s=S5_();return `3 − Vb = 3 − ${F_(s.Vb,3)} = ${F_(3-s.Vb,3)}V`},
+  iR1:()=>{const s=S5_(),n=nominal;return `(9 − Va) ÷ R1 = ${F_(9-s.Va,3)} ÷ ${n.R1} = ${F_(s.I1*1000,2)}mA（由 9V 流向 a；= I2 + IL）`},
+  iR2:()=>{const s=S5_(),n=nominal;return `Va ÷ R2 = ${F_(s.Va,3)} ÷ ${n.R2} = ${F_(s.I2*1000,2)}mA`},
+  iRL:()=>{const s=S5_(),n=nominal;return `節點電壓法：Va = ${F_(s.Va,3)}V、Vb = ${F_(s.Vb,3)}V；(Va − Vb) ÷ ${n.RL} = ${F_(s.IL*1000,2)}mA（由 a 流向 b）`},
+  iR3:()=>{const s=S5_(),n=nominal;return `Vb ÷ R3 = ${F_(s.Vb,3)} ÷ ${n.R3} = ${F_(s.I3*1000,2)}mA（= IL + I4）`},
+  iR4:()=>{const s=S5_(),n=nominal;return `(3 − Vb) ÷ R4 = ${F_(3-s.Vb,3)} ÷ ${n.R4} = ${F_(s.I4*1000,2)}mA（${s.I4>=0?"由 3V 流向 b":"由 b 流向 3V"}）`},
   m1:()=>{const t=T5_();return `理論值 R1//R2 + R3//R4 = ${F_(t.a,1)}+${F_(t.b,1)} = ${F_(t.R,1)}Ω`},
   m2:()=>{const t=T5_();return `理論值 Va−Vb = ${F_(t.Va,3)}−${F_(t.Vb,3)} = ${F_(t.E,3)}V`},
   c1:()=>{const t=T5_(),n=t.n;return `${n.R1}×${n.R2}÷${n.R1+n.R2} + ${n.R3}×${n.R4}÷${n.R3+n.R4} = ${F_(t.a,1)}+${F_(t.b,1)} = ${F_(t.R,1)}Ω`},
