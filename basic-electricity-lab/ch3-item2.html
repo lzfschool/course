@@ -275,7 +275,7 @@ function drawSch(){
     el("text",{x:BX-22,y:my+5,class:"lbl","text-anchor":"end"},g).textContent="9V";
     el("text",{x:BX+12,y:my-12,class:"lbl"},g).textContent="+";
     el("text",{x:BX+12,y:my+24,class:"lbl"},g).textContent="−";
-    el("text",{x:BX,y:282,class:"lbl","text-anchor":"middle",style:"font-size:11px"},S).textContent=st.power?"9V 已接上（量電阻前要移除）":"（量電阻前已移除 9V）";}
+    el("text",{x:-66,y:282,class:"lbl","text-anchor":"start",style:"font-size:11px"},S).textContent=st.power?"9V 已接上（量電阻前要移除）":"（量電阻前已移除 9V）";}
   el("path",{d:"M52,150 L84,150 m-7,-5 l7,5 l-7,5",fill:"none",stroke:"var(--accent)","stroke-width":1.6},S);
   el("text",{x:56,y:142,class:"rname"},S).innerHTML='R<tspan font-size="10" dy="4">T</tspan>';
   if(R().type==="A"){
