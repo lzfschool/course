@@ -351,9 +351,21 @@ function drawBB(){
     e("circle",{cx:mx,cy:my,r:11,fill:"#fff",stroke:"#e6b92e","stroke-width":3});
     e("text",{x:mx,y:my+4.5,"font-size":12,"font-weight":700,"text-anchor":"middle",fill:"#222"}).textContent="A";
   }
-  if(BRK==="R3")ammeter(3,"p",3,"n",-18);
-  if(BRK==="R2")ammeter(5,"d",7,"d",12);
-  if(BRK==="R1")ammeter(11,"d",13,"d",12);
+  // 未串入時，在電表會出現的位置畫 ✕，點一下就把電表串進去（與工作項目 1 相同的操作）
+  function brkMark(k,c1,r1,c2,r2,side){
+    if(R().type!=="A")return;
+    const x1=X(c1),y1=Y(r1),x2=X(c2),y2=Y(r2),vert=x1===x2,mx=(x1+x2)/2+(vert?side:0),my=(y1+y2)/2+(vert?0:side);
+    const g=e("g",{class:"brk",style:"cursor:pointer",tabindex:0,role:"button","aria-label":"把電表串入 "+k});
+    el("circle",{cx:mx,cy:my,r:8,fill:"#fff",stroke:"#1f7a5a","stroke-width":1.6,"stroke-dasharray":"3 2"},g);
+    el("path",{d:`M${mx-3.5},${my-3.5} L${mx+3.5},${my+3.5} M${mx+3.5},${my-3.5} L${mx-3.5},${my+3.5}`,stroke:"#1f7a5a","stroke-width":2},g);
+    el("title",{},g).textContent="把電表串入 "+k;
+    const go=()=>{st.brk=k;st.flip=false;st.red=st.black=null;update()};
+    g.addEventListener("click",go);g.addEventListener("keydown",ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();go()}});
+  }
+  const AM=(k,...a)=>BRK===k?ammeter(...a):brkMark(k,...a);
+  AM("R3",3,"p",3,"n",-18);
+  AM("R2",5,"d",7,"d",12);
+  AM("R1",11,"d",13,"d",12);
   RS.forEach(([k,c1,r1,c2,r2])=>colorRes(B,X(c1),Y(r1),X(c2),Y(r2),nominal[k],k));
   RS.forEach(([k,c1,r1,c2,r2])=>{const vert=c1===c2;e("text",{x:vert?X(c1)+13:(X(c1)+X(c2))/2,y:vert?(Y(r1)+Y(r2))/2+4:(k==="R2"?Y(r1)+20:Y(r1)-14),"font-size":11,"font-weight":700,fill:"#1f7a5a","text-anchor":vert?"start":"middle"}).textContent=k});
   function jumper(c1,r1,c2,r2){
@@ -361,7 +373,7 @@ function drawBB(){
     e("path",{d:`M${x1},${y1} L${x2},${y2}`,fill:"none",stroke:"#7b3fb5","stroke-width":3.2,"stroke-linecap":"round"});
     [[x1,y1],[x2,y2]].forEach(([x,y])=>e("circle",{cx:x,cy:y,r:3,fill:"#7b3fb5"}));
   }
-  [[5,"R6"],[11,"R5"],[17,"R4"]].forEach(([c,k])=>BRK===k?ammeter(c,"j",c,"n2",18):jumper(c,"j",c,"n2"));
+  [[5,"R6"],[11,"R5"],[17,"R4"]].forEach(([c,k])=>{if(BRK===k)ammeter(c,"j",c,"n2",18);else{jumper(c,"j",c,"n2");brkMark(k,c,"j",c,"n2",18)}});
   if(BRK)e("text",{x:X(22),y:Y("n")-6,"font-size":11,"font-weight":700,fill:"#b8860b"}).textContent="電流表串入 "+BRK;
   [["a",4,"p"],["c",5,"b"],["d",11,"a"],["e",17,"a"],["b",4,"n2"]].forEach(([id,c,r])=>{
     const x=X(c),y=Y(r);
@@ -407,7 +419,7 @@ function reading(){
     const sol=volts(actual,st.power?9:0),fmt=x=>{const v=x*r.k,a=Math.abs(v);if(a>r.full+Math.pow(10,-r.dec)/2){out.ol=true;out.digits=" 1.";return false}out.digits=a.toFixed(r.dec);out.sign=v<0&&Number(out.digits)!==0?"−":"";return true};
     const nopw=st.power?"":"（9V 電源還沒接上）";
     if(r.type==="A"){
-      if(!st.brk){out.digits=(0).toFixed(r.dec);out.msg="電流檔要串聯：點電路圖上電阻旁的 ✕，把電表串入那個電阻（紅棒接靠 a 端）。";return out}
+      if(!st.brk){out.digits=(0).toFixed(r.dec);out.msg="電流檔須串聯：點線路上的 ✕（電路圖或麵包板皆可），斷開該處並把電表串進去（紅棒接靠 a 端）。";return out}
       const I=sol.I[st.brk]*1000*(st.flip?-1:1);
       if(!fmt(I)){out.msg=`超過 ${r.label} 檔，請改用較大的電流檔。`;out.lvl="bad";return out}
       out.log=`I(${st.brk}) = ${out.sign}${out.digits} mA${st.flip?"（紅黑棒對調）":""}　[${r.label}]`;
