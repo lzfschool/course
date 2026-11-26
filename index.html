@@ -109,7 +109,7 @@ function render(){
   if(!ch){$("#content").innerHTML='<div class="empty">這門課程還沒有章節。</div>';save();return}
   $("#content").innerHTML=`<div class="chhead"><h2>第 ${esc(ch.no)} 章　${esc(ch.title)}</h2><p>已完成 ${countDone(ch)} / ${countAll(ch)} 個項目</p></div>`+
     (ch.sections.length?ch.sections.map(s=>`<section><h3>${esc(s.title)}</h3><ul class="cards">${s.items.map(i=>i.href
-      ?`<li><a class="card" href="${esc(i.href)}"><span class="no">${esc(i.no)}</span><b>${esc(i.title)}</b><span class="d">${esc(i.desc)}</span></a></li>`
+      ?`<li><a class="card" href="${esc(i.href)}${i.href.includes("?")?"&":"?"}v=${Date.now().toString(36)}"><span class="no">${esc(i.no)}</span><b>${esc(i.title)}</b><span class="d">${esc(i.desc)}</span></a></li>`
       :`<li><div class="card todo"><span class="no">${esc(i.no)}</span><b>${esc(i.title)}</b><span class="d">製作中</span></div></li>`).join("")}</ul></section>`).join("")
     :'<div class="empty">這一章還沒有項目。</div>');
   save();
