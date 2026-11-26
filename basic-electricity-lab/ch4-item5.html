@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>工作項目 5：示波器之調整與量測（GDS-1000-U）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --bg:#eef1ee;--panel:#ffffff;--ink:#1d2622;--muted:#5d6b64;--line:#cfd8d2;--wire:#2b3a33;
+  --accent:#1f7a5a;--ok:#1f7a3a;--warn:#b26a00;--bad:#c0392b;--red:#d23a2f;
+  --font-body:"Noto Sans TC","Microsoft JhengHei","PingFang TC",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141a17;--panel:#1c2420;--ink:#e3ebe6;--muted:#9aaba2;--line:#33403a;--wire:#c9d6cf;
+  --accent:#4cc395;--ok:#5fd08a;--warn:#f0a83a;--bad:#ff7a6b;--red:#ff6a5c;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.wrap{max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 20px}
+.eyebrow{font-size:12px;letter-spacing:.12em;color:var(--accent);font-weight:700}
+h1{margin:2px 0 0;font-size:clamp(22px,3.4vw,30px);font-weight:900;text-wrap:balance;line-height:1.25}
+.sub{color:var(--muted);font-size:14px;margin:4px 0 0}
+h2{font-size:17px;margin:0;font-weight:700}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button,select,input{font:inherit;color:inherit}
+.btn{border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:5px 11px;cursor:pointer;font-size:14px}
+.btn:hover{border-color:var(--accent)}
+.btn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.hint{font-size:13.5px;color:var(--muted)}
+.mono{font-family:var(--font-mono)}
+.tabs{display:flex;flex-wrap:wrap;gap:6px}
+.tabs .btn{font-size:13.5px}
+.grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:20px}
+@media (max-width:960px){.grid{grid-template-columns:minmax(0,1fr)}}
+/* 示波器螢幕與面板 */
+.dso{background:#2d3438;color:#eef3f0;border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px;box-shadow:inset 0 0 0 3px rgba(0,0,0,.35)}
+.crt{background:#0b1318;border:5px solid #171d20;border-radius:8px;padding:8px;position:relative}
+.crt svg{width:100%;height:auto;display:block}
+.crt-bar{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px;font-family:var(--font-mono);font-size:12px;color:#ffd84a;padding:4px 6px 0}
+.crt-meas{display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:6px;margin-top:8px;font-family:var(--font-mono);font-size:12.5px}
+.crt-meas div{background:rgba(255,255,255,.07);border-radius:6px;padding:5px 8px;color:#cfd8d2}
+.crt-meas b{display:block;color:#ffd84a;font-size:14px}
+.dso-ctrl{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;background:rgba(0,0,0,.22);padding:10px 12px;border-radius:10px;font-size:13px}
+.dso-ctrl label{display:block;font-size:12px;color:#b8c7bf;margin-bottom:3px}
+.dso-ctrl select,.dso-ctrl input[type=range]{width:100%}
+.dso-ctrl select{background:#1c2327;color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:5px;padding:4px 6px}
+.dso .btn{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.3);color:#fff}
+.dso .btn.on{background:#e6b92e;color:#1b1a0c;border-color:#ffd84a;font-weight:700}
+/* 右側電路與三用電表 */
+.svgbox{overflow-x:auto}
+svg.circ{width:100%;min-width:340px;height:auto;display:block}
+.dmm-mini{background:#e6b92e;color:#2a2208;border-radius:12px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.dmm-lcd{background:#c7d3b4;color:#1b2417;border:4px solid #2b2b2b;border-radius:6px;padding:4px 12px;font-family:var(--font-mono);font-size:24px;font-weight:600;min-width:160px;text-align:right}
+.note-box{background:var(--bg);border-left:4px solid var(--accent);padding:10px 12px;border-radius:0 8px 8px 0;font-size:13.5px}
+/* 學習單 */
+.sheet table{border-collapse:collapse;width:100%;min-width:580px;font-size:14.5px}
+.sheet th,.sheet td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:middle}
+.sheet th{font-size:12.5px;color:var(--muted);font-weight:700}
+.sheet tr.sec td{background:var(--bg);font-weight:700;color:var(--accent)}
+.sheet input[type=number]{width:120px;padding:4px 6px;border:1px solid var(--line);border-radius:5px;background:var(--panel);font-family:var(--font-mono)}
+.sheet select{padding:3px 6px;border:1px solid var(--line);border-radius:5px;background:var(--panel)}
+.mark{font-weight:700;font-size:14px;white-space:nowrap}
+.mark.ok{color:var(--ok)} .mark.bad{color:var(--bad)}
+.ans{font-family:var(--font-mono);color:var(--muted);font-size:13px}
+.ans[hidden]{display:none!important}
+footer{font-size:12.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <a href="../index.html?course=basic-electricity-lab&amp;ch=4" style="display:inline-block;font-size:13px;color:var(--accent);text-decoration:none;margin-bottom:4px">← 回實習目錄</a>
+      <div class="eyebrow">基本電學實習 第 4 章 · 4-4 示波器之使用</div>
+      <h1>工作項目 5：示波器之調整與量測</h1>
+      <p class="sub">切換課本 5 個實習情境，調整 GDS-1000-U 示波器的 VOLTS/DIV、TIME/DIV、DC/AC/GND 耦合、垂直位置與探棒倍率（×1 / ×10），量測波形並核對三用電表有效值。</p>
+    </div>
+  </header>
+
+  <!-- 實習情境切換 -->
+  <section class="panel" aria-label="實習項目切換">
+    <div class="row" style="justify-content:space-between">
+      <h2>選擇課本實習情境（p.140–147）</h2>
+      <div class="tabs" id="modeTabs" role="tablist">
+        <button class="btn on" data-m="cal" type="button" role="tab">0. 探棒補償校準</button>
+        <button class="btn" data-m="dc" type="button" role="tab">二、直流 +10V 測量</button>
+        <button class="btn" data-m="offset" type="button" role="tab">三、含直流成分（圖 4-25）</button>
+        <button class="btn" data-m="acsq" type="button" role="tab">四、交流方波（圖 4-26）</button>
+        <button class="btn" data-m="circuit" type="button" role="tab">五、交流電路（圖 4-27）</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid">
+    <!-- 左：數位儲存示波器 -->
+    <section class="panel" aria-label="數位儲存示波器">
+      <div class="row" style="justify-content:space-between">
+        <h2>數位儲存示波器（GDS-1000-U）</h2>
+        <div class="row">
+          <button class="btn on" id="autoBtn" type="button">AUTOSET 自動擷取</button>
+          <button class="btn" id="runBtn" type="button">RUN / STOP</button>
+        </div>
+      </div>
+
+      <div class="dso">
+        <div class="crt">
+          <svg id="scopeSvg" viewBox="0 0 500 360" role="img" aria-label="示波器 8x10 格線波形顯示幕"></svg>
+          <div class="crt-bar">
+            <span id="barCh">CH1: 1 V/DIV (DC)</span>
+            <span id="barTime">TIME: 250 μs/DIV</span>
+            <span id="barProbe">PROBE: ×1</span>
+            <span id="barTrig">TRIG: AUTO</span>
+          </div>
+          <div class="crt-meas">
+            <div>峰對峰值 Vp-p<b id="mVpp">2.00 V</b></div>
+            <div>有效值 Vrms<b id="mVrms">1.00 V</b></div>
+            <div>最大 / 最小值<b id="mMinMax">+2.0 / 0.0 V</b></div>
+            <div>週期 T / 頻率 f<b id="mTf">1.00ms / 1.0kHz</b></div>
+          </div>
+        </div>
+
+        <div class="dso-ctrl">
+          <div>
+            <label for="vdivSel">VOLTS / DIV（垂直靈敏度）</label>
+            <select id="vdivSel"></select>
+          </div>
+          <div>
+            <label for="tdivSel">TIME / DIV（水平時基）</label>
+            <select id="tdivSel"></select>
+          </div>
+          <div>
+            <label>輸入耦合（Coupling）</label>
+            <div class="row" id="coupGrp">
+              <button type="button" class="btn on" data-c="DC">DC</button>
+              <button type="button" class="btn" data-c="AC">AC</button>
+              <button type="button" class="btn" data-c="GND">GND</button>
+            </div>
+          </div>
+          <div>
+            <label>探棒衰減倍率（Probe）</label>
+            <div class="row" id="probeGrp">
+              <button type="button" class="btn on" data-p="1">×1</button>
+              <button type="button" class="btn" data-p="10">×10</button>
+            </div>
+          </div>
+          <div>
+            <label for="posSl">垂直位置 POSITION（<span id="posLbl">0.0</span> 格）</label>
+            <input type="range" id="posSl" min="-4" max="4" step="0.5" value="0">
+          </div>
+          <div id="compBox">
+            <label for="compSel">探棒補償調整（圖 4-21）</label>
+            <select id="compSel">
+              <option value="ok">正常（方波平整）</option>
+              <option value="over">高頻補償過大（尖峰過衝）</option>
+              <option value="under">補償不足（圓角上升）</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 右：對應實習電路與量測點 -->
+    <section class="panel" aria-label="實習電路與量測點">
+      <h2 id="circTitle">探棒補償校準輸出（1 kHz / 2 Vp-p）</h2>
+      <div class="svgbox">
+        <svg class="circ" id="circSvg" viewBox="0 0 420 260" role="img" aria-label="實習電路圖"></svg>
+      </div>
+
+      <div id="nodeBox" class="row" hidden>
+        <span class="hint">示波器 / 三用電表量測點：</span>
+        <button class="btn on" data-n="A" type="button">量測 VA（A 對地）</button>
+        <button class="btn" data-n="B" type="button">量測 VB（B 對地）</button>
+        <button class="btn" data-n="AB" type="button">量測 VAB（A−B）</button>
+      </div>
+
+      <div class="dmm-mini" id="dmmBox">
+        <div>
+          <div style="font-size:12px;font-weight:700">數位三用電表（核對用）</div>
+          <div style="font-size:13px" id="dmmSub">ACV 有效值（RMS）</div>
+        </div>
+        <div class="dmm-lcd" id="dmmVal">1.000 V</div>
+      </div>
+
+      <div class="note-box" id="sceneNote"></div>
+    </section>
+  </div>
+
+  <!-- 學習單 -->
+  <section class="panel sheet" aria-label="學習單">
+    <div class="row" style="justify-content:space-between">
+      <h2>工作項目 5 完整學習單（課本 p.144–147）</h2>
+      <div class="row">
+        <button class="btn" id="checkBtn" type="button">檢查答案</button>
+        <button class="btn" id="ansBtn" type="button">顯示參考答案</button>
+        <button class="btn" id="resetBtn" type="button">清空紀錄</button>
+      </div>
+    </div>
+    <p class="hint" style="margin:0">涵蓋一、波形計算練習；二、直流 +10V 測量；三、圖 4-25 含直流成分訊號；四、圖 4-26 交流方波；五、圖 4-27 交流信號電路量測（計算值與三用電表 ACV 量測值）。</p>
+    <div class="svgbox"><table id="sheet"></table></div>
+  </section>
+
+  <footer>螢幕為標準 8 格（垂直）× 10 格（水平）。使用 ×10 探棒時，實際輸入電壓 = 螢幕格數 × (VOLTS/DIV) × 10（或示波器選單設為 ×10 自動換算）。</footer>
+</div>
+
+<script>
+(()=>{
+const $=s=>document.querySelector(s);
+const NS="http://www.w3.org/2000/svg";
+const VDIVS=[0.01,0.02,0.05,0.1,0.2,0.5,1,2,5,10];
+const TDIVS=[1e-5,2.5e-5,5e-5,1e-4,2.5e-4,5e-4,1e-3,2e-3,2.5e-3,5e-3];
+const fmtV=v=>v<1?(v*1000).toFixed(0)+" mV":v+" V";
+const fmtT=t=>t<1e-3?(t*1e6).toFixed(0)+" μs":(t*1e3).toFixed(1).replace(/\.0$/,"")+" ms";
+
+// 圖 4-25 精確分壓比：1k 串 [4.7k // (2.2k + 3.9k)]，取 B 點（3.9k 上端）
+const R_AC_425=(4.7*6.1)/(4.7+6.1); // 2.6546 kΩ
+const K_BC_425=(R_AC_425/(1+R_AC_425))*(3.9/6.1); // 0.46444
+
+// 圖 4-27 精確分壓比（20Vp-p = 10Vm = 7.071Vrms, 100Hz）
+const K_A_427=16/26;    // (15+1)/(10+15+1) = 0.615385
+const K_B_427=5.1/45.1; // 5.1/(20+20+5.1) = 0.113082
+const K_AB_427=K_A_427-K_B_427; // 0.502303
+
+const st={mode:"cal",vdiv:1,tdiv:2.5e-4,coup:"DC",probe:1,pos:0,comp:"ok",node427:"A",running:true};
+
+function getSignal(){
+  if(st.mode==="cal")return {type:"square",f:1000,vpp:2,dc:1,comp:st.comp,desc:"1 kHz、2 Vp-p（0V 至 +2V）方波校正信號"};
+  if(st.mode==="dc")return {type:"dc",f:0,vpp:0,dc:10,desc:"+10 V 直流電源"};
+  if(st.mode==="offset")return {type:"sine",f:300,vpp:8*K_BC_425,dc:2*K_BC_425,desc:`圖 4-25 BC 間電壓（300 Hz，${(-2*K_BC_425).toFixed(2)}V 至 +${(6*K_BC_425).toFixed(2)}V）`};
+  if(st.mode==="acsq")return {type:"square",f:200,vpp:6,dc:0,desc:"圖 4-26 方波（200 Hz，6 Vp-p）"};
+  const k=st.node427==="A"?K_A_427:(st.node427==="B"?K_B_427:K_AB_427);
+  return {type:"sine",f:100,vpp:20*k,dc:0,desc:`圖 4-27 ${st.node427==="AB"?"VAB":"V"+st.node427}（100 Hz，${(20*k).toFixed(2)} Vp-p）`};
+}
+
+function drawScope(){
+  const svg=$("#scopeSvg");svg.innerHTML="";
+  const el=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);(p||svg).appendChild(e);return e};
+  const W=500,H=360,gw=W/10,gh=H/8;
+  // 格線
+  for(let i=0;i<=10;i++)el("line",{x1:i*gw,y1:0,x2:i*gw,y2:H,stroke:i===5?"rgba(120,190,220,.5)":"rgba(120,190,220,.18)","stroke-width":i===5?1.5:1});
+  for(let j=0;j<=8;j++)el("line",{x1:0,y1:j*gh,x2:W,y2:j*gh,stroke:j===4?"rgba(120,190,220,.5)":"rgba(120,190,220,.18)","stroke-width":j===4?1.5:1});
+  // 中央軸細刻度
+  for(let k=0;k<=50;k++)el("line",{x1:k*10,y1:H/2-3,x2:k*10,y2:H/2+3,stroke:"rgba(120,190,220,.45)","stroke-width":1});
+  for(let k=0;k<=40;k++)el("line",{x1:W/2-3,y1:k*9,x2:W/2+3,y2:k*9,stroke:"rgba(120,190,220,.45)","stroke-width":1});
+
+  // 0V 基準線標記（左側小箭頭）
+  const y0=H/2-st.pos*gh;
+  el("polygon",{points:`2,${y0-5} 12,${y0} 2,${y0+5}`,fill:"#ffd84a"});
+  el("line",{x1:12,y1:y0,x2:W,y2:y0,stroke:"rgba(255,216,74,.2)","stroke-dasharray":"4 4"});
+
+  const sig=getSignal();
+  // 探棒 ×10 若設為 10:1 實際衰減 1/10 進示波器（本模擬以「螢幕有效每格 = vdiv * probe」或真實衰減呈現：採課本習慣，旋鈕顯示 VOLTS/DIV，輸入信號經探棒 1/probe 衰減）
+  const effVdiv=st.vdiv*st.probe;
+  const totalT=st.tdiv*10;
+  const pts=[];
+  for(let x=0;x<=W;x+=2){
+    const t=(x/W)*totalT;
+    let v=0;
+    if(st.coup!=="GND"){
+      const dcPart=st.coup==="DC"?sig.dc:0;
+      if(sig.type==="dc"){v=dcPart}
+      else if(sig.type==="sine"){v=dcPart+(sig.vpp/2)*Math.sin(2*Math.PI*sig.f*t)}
+      else{
+        const ph=(sig.f*t)%1;
+        const hi=ph<0.5;
+        let sq=hi?1:-1;
+        // 模擬探棒補償過大 / 不足（圖 4-21）
+        if(sig.comp&&sig.comp!=="ok"){
+          const local=hi?ph*2:(ph-0.5)*2;
+          const exp=Math.exp(-local*10);
+          if(sig.comp==="over")sq=hi?(1+0.45*exp):(-1-0.45*exp);
+          if(sig.comp==="under")sq=hi?(1-0.65*exp):(-1+0.65*exp);
+        }
+        v=dcPart+(sig.vpp/2)*sq;
+      }
+    }
+    const y=y0-(v/effVdiv)*gh;
+    pts.push(`${x},${Math.max(2,Math.min(H-2,y)).toFixed(1)}`);
+  }
+  el("polyline",{points:pts.join(" "),fill:"none",stroke:"#ffd84a","stroke-width":2.6,"stroke-linejoin":"round"});
+
+  // 狀態與量測列
+  $("#barCh").textContent=`CH1: ${fmtV(st.vdiv)}/DIV (${st.coup})`;
+  $("#barTime").textContent=`TIME: ${fmtT(st.tdiv)}/DIV`;
+  $("#barProbe").textContent=`PROBE: ×${st.probe}`;
+  $("#barTrig").textContent=st.running?"TRIG: AUTO (RUN)":"STOP (HOLD)";
+
+  const showDC=st.coup==="DC"?sig.dc:0;
+  const showVpp=st.coup==="GND"?0:sig.vpp;
+  const vmax=st.coup==="GND"?0:showDC+showVpp/2;
+  const vmin=st.coup==="GND"?0:showDC-showVpp/2;
+  let vrms=0;
+  if(st.coup!=="GND"){
+    const acRms=sig.type==="sine"?(sig.vpp/2)/Math.SQRT2:(sig.type==="square"?sig.vpp/2:0);
+    vrms=Math.sqrt(showDC*showDC+acRms*acRms);
+  }
+  $("#mVpp").textContent=showVpp.toFixed(2)+" V";
+  $("#mVrms").textContent=vrms.toFixed(2)+" V";
+  $("#mMinMax").textContent=`${vmax>=0?"+":""}${vmax.toFixed(2)} / ${vmin>=0?"+":""}${vmin.toFixed(2)} V`;
+  $("#mTf").textContent=sig.f?`${fmtT(1/sig.f)} / ${sig.f>=1000?(sig.f/1000)+"kHz":sig.f+"Hz"}`:"DC（直流）";
+
+  // 三用電表同步讀值
+  if(sig.type==="dc"){
+    $("#dmmSub").textContent="DCV 直流電壓檔";
+    $("#dmmVal").textContent=sig.dc.toFixed(2)+" V";
+  }else if(st.mode==="circuit"){
+    const acRms=(sig.vpp/2)/Math.SQRT2;
+    $("#dmmSub").textContent=`ACV 有效值（量測 ${st.node427==="AB"?"VAB":"V"+st.node427}）`;
+    $("#dmmVal").textContent=acRms.toFixed(3)+" V";
+  }else{
+    $("#dmmSub").textContent="ACV 有效值（RMS）";
+    const acRms=sig.type==="sine"?(sig.vpp/2)/Math.SQRT2:(sig.vpp/2);
+    $("#dmmVal").textContent=acRms.toFixed(3)+" V";
+  }
+}
+
+function drawCircuit(){
+  const svg=$("#circSvg");svg.innerHTML="";
+  const el=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);(p||svg).appendChild(e);return e};
+  const txt=(x,y,s,c,sz,fw)=>{const e=el("text",{x,y,fill:c||"var(--ink)","font-size":sz||13,"font-weight":fw||600,"font-family":"IBM Plex Mono,Noto Sans TC"});e.textContent=s;return e};
+  const zigH=(x1,y,x2)=>{const m=(x1+x2)/2;return `M${x1},${y} L${m-22},${y} L${m-17},${y-7} L${m-9},${y+7} L${m-1},${y-7} L${m+7},${y+7} L${m+15},${y-7} L${m+22},${y} L${x2},${y}`};
+  const zigV=(x,y1,y2)=>{const m=(y1+y2)/2;return `M${x},${y1} L${x},${m-22} L${x-7},${m-17} L${x+7},${m-9} L${x-7},${m-1} L${x+7},${m+7} L${x-7},${m+15} L${x},${m+22} L${x},${y2}`};
+
+  $("#compBox").hidden=st.mode!=="cal";
+  $("#nodeBox").hidden=st.mode!=="circuit";
+
+  if(st.mode==="cal"){
+    $("#circTitle").textContent="圖 4-21　探棒補償校準（Probe Comp 1kHz / 2Vp-p）";
+    $("#sceneNote").innerHTML="將 CH1 探棒接至面板右下角 <b>Probe Compensation Output（1kHz, 2Vp-p 方波）</b>，切換「探棒補償調整」觀察正常、補償過大與補償不足的波形差異。";
+    el("rect",{x:30,y:60,width:140,height:120,rx:10,fill:"var(--bg)",stroke:"var(--accent)","stroke-width":2});
+    txt(50,115,"CAL OUTPUT","var(--accent)",14,700);
+    txt(50,138,"1 kHz / 2 Vp-p","var(--muted)",12,600);
+    el("path",{d:"M170,120 L260,120",stroke:"var(--red)","stroke-width":3});
+    el("rect",{x:260,y:70,width:130,height:100,rx:10,fill:"var(--bg)",stroke:"var(--wire)","stroke-width":2});
+    txt(285,115,"示波器 CH1","var(--ink)",14,700);
+    txt(285,138,"探棒 ×1 / ×10","var(--muted)",12,600);
+  }else if(st.mode==="dc"){
+    $("#circTitle").textContent="二、直流電壓之測量（+10V 電源）";
+    $("#sceneNote").innerHTML="課本步驟：1. 電源輸出 <b>+10V</b>；2. VOLTS/DIV 設為 <b>2V</b>；3. 垂直位置調至最底線（<b>−4 格</b>）；4. 輸入耦合切至 <b>DC</b>，觀察水平掃描線向上移 <b>5 格</b>（2V × 5 = 10V）。";
+    el("circle",{cx:110,cy:130,r:34,fill:"var(--bg)",stroke:"var(--accent)","stroke-width":2.5});
+    txt(86,126,"DC +10V","var(--accent)",13,700);
+    txt(96,146,"電源","var(--muted)",12,600);
+    el("path",{d:"M144,110 L265,110 M144,150 L265,150",stroke:"var(--wire)","stroke-width":2.5});
+    el("rect",{x:265,y:80,width:125,height:100,rx:10,fill:"var(--bg)",stroke:"var(--wire)","stroke-width":2});
+    txt(285,125,"CH1（DC 耦合）","var(--ink)",13,700);
+    txt(285,148,"2 V/DIV","var(--muted)",12,600);
+  }else if(st.mode==="offset"){
+    $("#circTitle").textContent="圖 4-25　含直流成分之訊號操作（量測 VBC）";
+    $("#sceneNote").innerHTML="信號產生器輸出 <b>−2V 至 +6V（300Hz，DC Offset = +2V，8 Vp-p）</b>正弦波。經分壓網路後 <b>VBC = 0.464 × Vs</b>（約 −0.93V 至 +2.79V，DC 偏壓 +0.93V）。試著在 <b>DC 耦合</b>與 <b>AC 耦合</b>間切換，觀察直流成分被隔除的效果！";
+    // 繪製圖 4-25 電路
+    el("circle",{cx:65,cy:130,r:24,fill:"var(--bg)",stroke:"var(--wire)","stroke-width":2});
+    txt(55,135,"Vs","var(--ink)",14,700);
+    el("path",{d:"M65,106 L65,45 L95,45 "+zigH(95,45,195)+" L320,45 L320,65",fill:"none",stroke:"var(--wire)","stroke-width":2.2});
+    el("path",{d:zigV(205,45,215),fill:"none",stroke:"var(--wire)","stroke-width":2.2});
+    el("path",{d:zigV(320,65,135)+zigV(320,135,215),fill:"none",stroke:"var(--wire)","stroke-width":2.2});
+    el("path",{d:"M65,154 L65,215 L320,215",fill:"none",stroke:"var(--wire)","stroke-width":2.2});
+    el("circle",{cx:205,cy:45,r:4,fill:"var(--accent)"});txt(200,34,"A","var(--accent)",14,700);
+    el("circle",{cx:320,cy:135,r:5,fill:"var(--red)"});txt(332,140,"B (CH1 紅)","var(--red)",12,700);
+    el("circle",{cx:205,cy:215,r:4,fill:"var(--ink)"});txt(200,235,"C (地)","var(--ink)",13,700);
+    txt(130,30,"1kΩ");txt(218,135,"4.7kΩ");txt(332,100,"2.2kΩ");txt(332,185,"3.9kΩ");
+  }else if(st.mode==="acsq"){
+    $("#circTitle").textContent="圖 4-26　交流之測量（200 Hz、6 Vp-p 方波）";
+    $("#sceneNote").innerHTML="信號產生器輸出 <b>200 Hz（T = 5 ms）、6 Vp-p 方波</b>，接至 CH1（AC 耦合）。任務：調整 VOLTS/DIV 與 TIME/DIV，使螢幕顯示 <b>2 ～ 3 週期</b>且<b>波峰到波谷共占 3 格</b>！";
+    el("rect",{x:25,y:70,width:150,height:110,rx:10,fill:"var(--bg)",stroke:"var(--accent)","stroke-width":2});
+    txt(42,115,"信號產生器 FG","var(--accent)",14,700);
+    txt(42,140,"200Hz / 6Vp-p 方波","var(--muted)",12,600);
+    el("path",{d:"M175,110 L255,110",stroke:"var(--red)","stroke-width":3});
+    el("path",{d:"M175,145 L255,145",stroke:"var(--wire)","stroke-width":3});
+    el("rect",{x:255,y:70,width:140,height:110,rx:10,fill:"var(--bg)",stroke:"var(--wire)","stroke-width":2});
+    txt(275,118,"示波器 CH1","var(--ink)",14,700);
+    txt(275,142,"AC 耦合","var(--muted)",12,600);
+  }else{
+    $("#circTitle").textContent="圖 4-27　交流信號電路量測（100 Hz、20 Vp-p 正弦波）";
+    $("#sceneNote").innerHTML="信號源：<b>100 Hz、20 Vp-p（Vrms = 7.071 V）</b>正弦波。左支路 10k–A–15k–1k（總阻 26kΩ）；右支路 20k–20k–B–5.1k（總阻 45.1kΩ）。切換上方量測點可觀察 A、B 與 VAB 波形及三用電表有效值。";
+    el("circle",{cx:55,cy:130,r:22,fill:"var(--bg)",stroke:"var(--wire)","stroke-width":2});
+    txt(44,135,"FG","var(--ink)",13,700);
+    el("path",{d:"M55,108 L55,25 L310,25 M55,152 L55,235 L310,235",fill:"none",stroke:"var(--wire)","stroke-width":2.2});
+    // 左支路 x=175: 10k(25-95), A(95), 15k(95-165), 1k(165-235)
+    el("path",{d:zigV(175,25,95)+zigV(175,95,165)+zigV(175,165,235),fill:"none",stroke:"var(--wire)","stroke-width":2.2});
+    // 右支路 x=310: 20k(25-95), 20k(95-165), B(165), 5.1k(165-235)
+    el("path",{d:zigV(310,25,95)+zigV(310,95,165)+zigV(310,165,235),fill:"none",stroke:"var(--wire)","stroke-width":2.2});
+    txt(188,65,"10kΩ");txt(188,135,"15kΩ");txt(188,205,"1kΩ");
+    txt(323,65,"20kΩ");txt(323,135,"20kΩ");txt(323,205,"5.1kΩ");
+    el("circle",{cx:175,cy:95,r:6,fill:st.node427!=="B"?"var(--red)":"var(--accent)"});txt(150,100,"A","var(--red)",15,700);
+    el("circle",{cx:310,cy:165,r:6,fill:st.node427!=="A"?"var(--red)":"var(--accent)"});txt(285,170,"B","var(--red)",15,700);
+  }
+}
+
+function autoset(){
+  if(st.mode==="cal"){st.vdiv=1;st.tdiv=2.5e-4;st.coup="DC";st.probe=1;st.pos=0}
+  else if(st.mode==="dc"){st.vdiv=2;st.tdiv=1e-3;st.coup="DC";st.probe=1;st.pos=-4}
+  else if(st.mode==="offset"){st.vdiv=1;st.tdiv=1e-3;st.coup="DC";st.probe=1;st.pos=0}
+  else if(st.mode==="acsq"){st.vdiv=2;st.tdiv=1e-3;st.coup="AC";st.probe=1;st.pos=0}
+  else{st.vdiv=5;st.tdiv=2.5e-3;st.coup="DC";st.probe=1;st.pos=0}
+  syncControls();update();
+}
+function syncControls(){
+  $("#vdivSel").value=String(st.vdiv);
+  $("#tdivSel").value=String(st.tdiv);
+  $("#posSl").value=String(st.pos);
+  $("#posLbl").textContent=st.pos.toFixed(1);
+  $("#coupGrp").querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.c===st.coup));
+  $("#probeGrp").querySelectorAll("button").forEach(b=>b.classList.toggle("on",+b.dataset.p===st.probe));
+}
+function update(){drawCircuit();drawScope()}
+
+// 下拉選單初始化
+VDIVS.forEach(v=>{const o=document.createElement("option");o.value=String(v);o.textContent=fmtV(v)+"/DIV";$("#vdivSel").appendChild(o)});
+TDIVS.forEach(t=>{const o=document.createElement("option");o.value=String(t);o.textContent=fmtT(t)+"/DIV";$("#tdivSel").appendChild(o)});
+
+$("#modeTabs").addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b)return;
+  st.mode=b.dataset.m;
+  $("#modeTabs").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));
+  autoset();
+});
+$("#vdivSel").addEventListener("change",e=>{st.vdiv=+e.target.value;update()});
+$("#tdivSel").addEventListener("change",e=>{st.tdiv=+e.target.value;update()});
+$("#posSl").addEventListener("input",e=>{st.pos=+e.target.value;$("#posLbl").textContent=st.pos.toFixed(1);update()});
+$("#compSel").addEventListener("change",e=>{st.comp=e.target.value;update()});
+$("#coupGrp").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;st.coup=b.dataset.c;syncControls();update()});
+$("#probeGrp").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;st.probe=+b.dataset.p;syncControls();update()});
+$("#nodeBox").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;st.node427=b.dataset.n;$("#nodeBox").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));update()});
+$("#autoBtn").addEventListener("click",autoset);
+$("#runBtn").addEventListener("click",()=>{st.running=!st.running;$("#runBtn").classList.toggle("on",!st.running);update()});
+
+// 學習單（完整對齊課本 p.144-147）
+const SHEET=[
+  {sec:"一、波形計算練習（課本 p.144）"},
+  {k:"c1v",label:"1(a). Vp-p = 5 DIV × ( ？ ) V/DIV = 10 Vp-p",unit:"V/DIV",type:"num",exp:()=>2,tol:0.02},
+  {k:"c1t",label:"1(b). T = 4 DIV × ( ？ ) μs/DIV = 0.1 ms",unit:"μs/DIV",type:"num",exp:()=>25,tol:0.02},
+  {k:"c2v",label:"2(a). 振幅占 6 格、10mV/DIV、探棒 ×10 → Vp-p =",unit:"V",type:"num",exp:()=>0.6,tol:0.02},
+  {k:"c2t",label:"2(b). 週期占 2.5 格、10μs/DIV → T =（μs）",unit:"μs",type:"num",exp:()=>25,tol:0.02},
+  {k:"c2f",label:"2(c). 承上，頻率 f = 1/T =（kHz）",unit:"kHz",type:"num",exp:()=>40,tol:0.02},
+  {sec:"二、直流電壓測量（+10V、2 V/DIV、DC 耦合，p.144–145）"},
+  {k:"dcDiv",label:"3. 掃描線自最底線向上移動幾格？",unit:"格",type:"num",exp:()=>5,tol:0.02},
+  {k:"dcV",label:"4. 待測直流電壓值 = VOLTS/DIV × 移動格數",unit:"V",type:"num",exp:()=>10,tol:0.02},
+  {sec:"四、交流方波測量（200Hz、6Vp-p，顯示 2~3 週且占 3 格，p.146）"},
+  {k:"acVdiv",label:"5. 調整後的 VOLTS/DIV（使 6Vp-p 占 3 格）",unit:"V/DIV",type:"num",exp:()=>2,tol:0.02},
+  {k:"acTdiv",label:"6. 調整後的 TIME/DIV（10 格顯示 2~3 週，T=5ms，填 ms）",unit:"ms/DIV",type:"num",exp:()=>1.25,tol:0.25},
+  {sec:"五、交流信號電路量測（圖 4-27：100Hz、20Vp-p，三用電表 ACV 有效值，p.147）"},
+  {k:"va",label:"7. VA 有效值（Vrms = 7.071 × 16/26）",unit:"V",type:"num",exp:()=>7.0710678*K_A_427,tol:0.03},
+  {k:"vb",label:"8. VB 有效值（Vrms = 7.071 × 5.1/45.1）",unit:"V",type:"num",exp:()=>7.0710678*K_B_427,tol:0.03},
+  {k:"vab",label:"9. VAB 有效值（VA − VB）",unit:"V",type:"num",exp:()=>7.0710678*K_AB_427,tol:0.03}
+];
+const KEY="ch4-ws5";
+let saved={};try{saved=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){}
+function buildSheet(){
+  const t=$("#sheet");
+  t.innerHTML="<thead><tr><th>項目</th><th>填寫</th><th>單位</th><th>結果</th></tr></thead><tbody></tbody>";
+  const tb=t.querySelector("tbody");
+  SHEET.forEach(r=>{
+    const tr=document.createElement("tr");
+    if(r.sec){tr.className="sec";tr.innerHTML=`<td colspan="4">${r.sec}</td>`;tb.appendChild(tr);return}
+    tr.innerHTML=`<td>${r.label}</td><td><input type="number" step="any" inputmode="decimal" id="ws-${r.k}" aria-label="${r.label}"></td><td class="mono">${r.unit||""}</td><td><span class="mark" id="mk-${r.k}"></span> <span class="ans" id="an-${r.k}" hidden></span></td>`;
+    tb.appendChild(tr);
+  });
+  SHEET.forEach(r=>{
+    if(!r.k)return;const e=$("#ws-"+r.k);
+    if(saved[r.k]!=null)e.value=saved[r.k];
+    e.addEventListener("input",()=>{saved[r.k]=e.value;try{localStorage.setItem(KEY,JSON.stringify(saved))}catch(err){}});
+    const a=$("#an-"+r.k);
+    if(r.k==="acTdiv")a.textContent="參考：1 或 1.25 或 1.5（10格=10~15ms，即2~3週）";
+    else a.textContent="參考："+(+r.exp().toFixed(3));
+  });
+}
+function check(){
+  SHEET.forEach(r=>{
+    if(!r.k)return;const e=$("#ws-"+r.k),mk=$("#mk-"+r.k);
+    if(!e.value){mk.textContent="";mk.className="mark";return}
+    const v=parseFloat(e.value);
+    const ok=r.k==="acTdiv"?(v>=1&&v<=1.5):Math.abs(v-r.exp())<=Math.abs(r.exp())*(r.tol||0.03);
+    mk.textContent=ok?"✓ 正確":"✗ 再檢查";mk.className="mark "+(ok?"ok":"bad");
+  });
+}
+$("#checkBtn").addEventListener("click",check);
+let showAns=false;
+$("#ansBtn").addEventListener("click",()=>{showAns=!showAns;$("#ansBtn").textContent=showAns?"隱藏參考答案":"顯示參考答案";document.querySelectorAll(".ans").forEach(a=>a.hidden=!showAns)});
+let armed=false;
+$("#resetBtn").addEventListener("click",()=>{
+  if(!armed){armed=true;$("#resetBtn").textContent="再按一次確認清空";setTimeout(()=>{armed=false;$("#resetBtn").textContent="清空紀錄"},3000);return}
+  armed=false;$("#resetBtn").textContent="清空紀錄";saved={};try{localStorage.removeItem(KEY)}catch(e){}
+  SHEET.forEach(r=>{if(r.k){$("#ws-"+r.k).value="";$("#mk-"+r.k).textContent=""}});
+});
+
+buildSheet();autoset();
+})();
+</script>
+<script>
+(()=>{
+const SALT="7c328925d5345127c62f82e1555e3762",ITER=1000000,HASH="8af8779b8313f4456fce0549f52445ac909b92c8bfb2b09393a6b2ff871dae26",KEY="ans-pass";
+const btn=document.getElementById("ansBtn");if(!btn)return;
+const hex2buf=h=>new Uint8Array(h.match(/../g).map(x=>parseInt(x,16)));
+async function derive(pw){
+  const k=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveBits"]);
+  const b=await crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:hex2buf(SALT),iterations:ITER},k,256);
+  return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("");
+}
+const same=(a,b)=>{if(a.length!==b.length)return false;let d=0;for(let i=0;i<a.length;i++)d|=a.charCodeAt(i)^b.charCodeAt(i);return d===0};
+let ok=false;
+const stash=new WeakMap();let busy=false;
+function hideAns(){if(ok)return;busy=true;document.querySelectorAll(".ans").forEach(a=>{if(a.textContent){stash.set(a,a.textContent);a.textContent=""}});busy=false}
+function restoreAns(){document.querySelectorAll(".ans").forEach(a=>{if(stash.has(a)&&!a.textContent)a.textContent=stash.get(a)})}
+hideAns();
+new MutationObserver(()=>{if(!busy&&!ok)hideAns()}).observe(document.body,{subtree:true,childList:true,characterData:true});
+const box=document.createElement("span");box.className="row ans-gate";box.hidden=true;{const s_=document.createElement("style");s_.textContent=".ans-gate[hidden]{display:none!important}";document.head.appendChild(s_)}box.style.gap="6px";
+box.innerHTML='<input type="password" inputmode="numeric" autocomplete="off" placeholder="教師密碼" aria-label="參考答案密碼" style="width:8em;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);font:inherit"><button class="btn" type="button">確定</button><span class="hint" role="status"></span>';
+btn.insertAdjacentElement("afterend",box);
+const inp=box.querySelector("input"),go=box.querySelector("button"),tip=box.querySelector("[role=status]");
+const say=(t,bad)=>{tip.textContent=t;tip.style.color=bad?"var(--bad)":""};
+document.addEventListener("click",e=>{
+  if(e.target!==btn||ok||!btn.textContent.includes("顯示"))return;
+  e.stopImmediatePropagation();e.preventDefault();
+  box.hidden=!box.hidden;say("");if(!box.hidden)inp.focus();
+},true);
+function unlock(pw){ok=true;restoreAns();try{sessionStorage.setItem(KEY,pw)}catch(e){}}
+let fails=0,until=0,checking=false;
+async function tryIt(){
+  if(checking)return;
+  if(!(window.crypto&&crypto.subtle)){say("此瀏覽器不支援安全驗證，請以 https 網址開啟。",true);return}
+  const now=Date.now();if(now<until){say(`請等 ${Math.ceil((until-now)/1000)} 秒再試。`,true);return}
+  const pw=inp.value.trim();if(!pw)return;
+  checking=true;go.disabled=true;say("驗證中…");
+  let good=false;try{good=same(await derive(pw),HASH)}catch(e){}
+  checking=false;go.disabled=false;
+  if(good){fails=0;unlock(pw);box.hidden=true;inp.value="";say("");btn.click()}
+  else{fails++;inp.select();if(fails>=5){until=Date.now()+30000;fails=0;say("密碼錯誤次數過多，請 30 秒後再試。",true)}else say("密碼錯誤",true)}
+}
+go.addEventListener("click",tryIt);inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();tryIt()}});
+let saved=null;try{saved=sessionStorage.getItem(KEY)}catch(e){}
+if(saved&&window.crypto&&crypto.subtle)derive(saved).then(h=>{if(same(h,HASH))unlock(saved);else try{sessionStorage.removeItem(KEY)}catch(e){}}).catch(()=>{});
+})();
+</script>
+</body>
+</html>

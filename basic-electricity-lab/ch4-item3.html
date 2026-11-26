@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>工作項目 3：電容值之量測（LCR 表）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --bg:#eef1ee;--panel:#ffffff;--ink:#1d2622;--muted:#5d6b64;--line:#cfd8d2;--wire:#2b3a33;
+  --accent:#1f7a5a;--meter:#2c6e58;--meter-ink:#f2f8f5;--lcd:#c7d3b4;--lcd-ink:#1b2417;
+  --red:#d23a2f;--black:#222;--ok:#1f7a3a;--warn:#b26a00;--bad:#c0392b;
+  --font-body:"Noto Sans TC","Microsoft JhengHei","PingFang TC",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141a17;--panel:#1c2420;--ink:#e3ebe6;--muted:#9aaba2;--line:#33403a;--wire:#c9d6cf;
+  --accent:#4cc395;--meter:#1f5241;--meter-ink:#e9f5ef;--lcd:#b9c7a4;--lcd-ink:#141c10;
+  --red:#ff6a5c;--black:#e3ebe6;--ok:#5fd08a;--warn:#f0a83a;--bad:#ff7a6b;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 20px}
+.eyebrow{font-size:12px;letter-spacing:.12em;color:var(--accent);font-weight:700}
+h1{margin:2px 0 0;font-size:clamp(22px,3.4vw,30px);font-weight:900;text-wrap:balance;line-height:1.25}
+.sub{color:var(--muted);font-size:14px;margin:4px 0 0}
+h2{font-size:17px;margin:0;font-weight:700}
+.grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:20px}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button,select,input{font:inherit;color:inherit}
+.btn{border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:5px 11px;cursor:pointer;font-size:14px}
+.btn:hover{border-color:var(--accent)}
+.btn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.hint{font-size:13.5px;color:var(--muted)}
+.svgbox{overflow-x:auto}
+svg.board{width:100%;min-width:480px;height:auto;display:block}
+.decoder{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.dec-out{font-family:var(--font-mono);font-size:14.5px;color:var(--accent);font-weight:700}
+.meter{background:var(--meter);color:var(--meter-ink);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:12px;box-shadow:inset 0 0 0 3px rgba(0,0,0,.18)}
+.meter h2{color:var(--meter-ink);display:flex;justify-content:space-between;align-items:center}
+.meter .brand{font-family:var(--font-mono);font-size:12px;opacity:.85}
+.lcd{background:var(--lcd);color:var(--lcd-ink);border-radius:8px;border:6px solid #1e2421;padding:8px 14px 10px;display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;gap:0 10px;align-items:end;box-shadow:inset 0 2px 8px rgba(0,0,0,.25)}
+.lcd.off{opacity:.45}
+.lcd .ann{grid-column:1/-1;display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:12px;font-weight:600}
+.lcd .ann .dim{opacity:.18}
+.lcd .val{grid-column:2;font-family:var(--font-mono);font-size:clamp(36px,6vw,50px);font-weight:600;font-variant-numeric:tabular-nums;text-align:right;line-height:1.05}
+.lcd .unit{grid-column:2;text-align:right;font-family:var(--font-mono);font-size:15px;font-weight:600}
+.fnkeys{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.fnkeys button{border:1.5px solid rgba(255,255,255,.35);background:rgba(0,0,0,.25);color:#fff;border-radius:6px;padding:5px 4px;cursor:pointer;font-size:12.5px;font-weight:700}
+.fnkeys button.on{background:#f2c94c;color:#1b1a0c;border-color:#f2c94c}
+.dial{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.dial .grp{grid-column:1/-1;font-size:12px;font-weight:700;letter-spacing:.08em;margin-top:2px;opacity:.9}
+.dial button{border:1.5px solid rgba(255,255,255,.28);background:rgba(255,255,255,.14);color:#fff;border-radius:6px;padding:5px 2px;cursor:pointer;font-family:var(--font-mono);font-size:12.5px}
+.dial button.on{background:#f2c94c;color:#1b1a0c;border-color:#f2c94c;font-weight:700}
+.msg{border-radius:8px;padding:8px 10px;font-size:13.5px;background:rgba(255,255,255,.9);color:#1d2622;min-height:2.6em}
+.msg.bad{background:#fbe0dc;color:#7a1d12}
+.msg.warn{background:#fff0cf;color:#6a4200}
+.msg.ok{background:#dff3e5;color:#13492a}
+.meter .btn{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.35);color:#fff}
+.jacks{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:rgba(0,0,0,.22);padding:8px;border-radius:10px}
+.jack-btn{display:flex;flex-direction:column;align-items:center;gap:4px;background:transparent;border:1.5px solid transparent;border-radius:8px;padding:4px;color:#fff;cursor:pointer;font-size:11.5px;font-weight:700}
+.jack-btn i{width:20px;height:20px;border-radius:50%;border:4px solid #1a1f1d;display:block;background:#444}
+.jack-btn.sel{border-color:#f2c94c;background:rgba(242,201,76,.22)}
+.jack-btn.sel i{background:#f2c94c}
+.log{font-family:var(--font-mono);font-size:13px;margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:3px;max-height:130px;overflow:auto}
+.log li{background:rgba(0,0,0,.25);border-radius:4px;padding:3px 8px;color:#fff}
+.sheet table{border-collapse:collapse;width:100%;min-width:560px;font-size:14.5px}
+.sheet th,.sheet td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:middle}
+.sheet th{font-size:12.5px;color:var(--muted);font-weight:700}
+.sheet tr.sec td{background:var(--bg);font-weight:700;color:var(--accent)}
+.sheet input[type=number]{width:120px;padding:4px 6px;border:1px solid var(--line);border-radius:5px;background:var(--panel);font-family:var(--font-mono)}
+.sheet select{padding:3px 6px;border:1px solid var(--line);border-radius:5px;background:var(--panel)}
+.mark{font-weight:700;font-size:14px;white-space:nowrap}
+.mark.ok{color:var(--ok)} .mark.bad{color:var(--bad)}
+.ans{font-family:var(--font-mono);color:var(--muted);font-size:13px}
+.ans[hidden]{display:none!important}
+.mono{font-family:var(--font-mono)}
+footer{font-size:12.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <a href="../index.html?course=basic-electricity-lab&amp;ch=4" style="display:inline-block;font-size:13px;color:var(--accent);text-decoration:none;margin-bottom:4px">← 回實習目錄</a>
+      <div class="eyebrow">基本電學實習 第 4 章 · 4-2.2、4-2.3 電容器之識別及量測</div>
+      <h1>工作項目 3：電容值之量測</h1>
+      <p class="sub">辨識電解電容正負極性與陶瓷/塑膠電容代碼標示法（表 4-1、表 4-2），使用 LCR 表 CxLx 插座並將 B/L 按鈕「按下（C 選項）」量測電容量。</p>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- 左：電容麵包板 + 代碼解碼器 -->
+    <section class="panel" aria-label="電容器量測與代碼解碼">
+      <div class="row" style="justify-content:space-between">
+        <h2>圖 4-17　電容量測實習圖</h2>
+        <div class="row">
+          <label class="hint" for="capSel">待測電容</label>
+          <select id="capSel" class="btn"></select>
+          <button class="btn" id="revBtn" type="button">反接測棒（測試極性）</button>
+        </div>
+      </div>
+
+      <div class="svgbox">
+        <svg class="board" id="board" viewBox="0 0 600 260" role="img" aria-label="麵包板電容量測圖"></svg>
+      </div>
+
+      <div class="row">
+        <label class="hint"><input type="checkbox" id="tolChk" checked> 含實際誤差（課本圖 4-17：100μF 電解電容實測 95.3μF）</label>
+        <button class="btn" id="reroll" type="button">換一顆同值電容</button>
+        <button class="btn" id="qBook" type="button">套用課本圖 4-17（100μF）</button>
+      </div>
+
+      <!-- 代碼標示法互動解碼器（對應課本圖 4-14、表 4-1、表 4-2） -->
+      <div class="decoder">
+        <b>圖 4-14　電容代碼標示法互動解碼器（對照課本表 4-1、表 4-2）</b>
+        <div class="row">
+          <label class="hint">代碼：</label>
+          <select id="decCode" class="btn mono">
+            <option value="104K|25V">104K / 25V（課本例 1）</option>
+            <option value="223M|2D">223M / 2D（課本例 2）</option>
+            <option value="472J|1H">472J / 1H</option>
+            <option value="103K|2A">103K / 2A</option>
+            <option value="334M|1J">334M / 1J</option>
+            <option value="681G|3A">681G / 3A</option>
+          </select>
+          <span class="hint">公式：<span class="mono">AB × 10^C pF ± 誤差</span>（1μF = 10⁶ pF）</span>
+        </div>
+        <div class="dec-out" id="decOut"></div>
+      </div>
+    </section>
+
+    <!-- 右：LCR 電表 -->
+    <section class="panel meter" aria-label="數位型 LCR 電表">
+      <h2><span>數位型 LCR 電表</span><span class="brand">C 檔（20nF ～ 200μF）</span></h2>
+      <div class="lcd" id="lcd" aria-live="polite">
+        <div class="ann"><span id="aMode">C</span><span id="aRange">200μF</span><span id="aBL">B/L: C</span><span id="aOL" class="dim">OL</span></div>
+        <div class="val" id="dVal">95.3</div>
+        <div class="unit" id="dUnit">μF</div>
+      </div>
+
+      <div class="fnkeys">
+        <button type="button" id="pwrBtn" class="on">POWER 電源</button>
+        <button type="button" id="holdBtn">PK HOLD</button>
+        <button type="button" id="blBtn" class="on">B / L（按下=C）</button>
+      </div>
+
+      <div class="msg" id="msg" role="status"></div>
+
+      <div class="dial" id="dial" role="group" aria-label="電容檔位旋鈕"></div>
+
+      <div>
+        <div style="font-size:12px;opacity:.9;margin-bottom:4px">測棒連接插座（點擊切換）：</div>
+        <div class="jacks" id="jacks">
+          <button type="button" class="jack-btn sel" data-j="CxLx"><i></i>CxLx (+ / −)</button>
+          <button type="button" class="jack-btn" data-j="VOH"><i></i>COM / VΩHz</button>
+          <button type="button" class="jack-btn" data-j="20A"><i></i>COM / 20A</button>
+        </div>
+      </div>
+
+      <div class="row">
+        <button class="btn" id="probeBtn" type="button">移開測棒</button>
+        <button class="btn" id="logBtn" type="button">記錄此讀值</button>
+      </div>
+      <ol class="log" id="log"></ol>
+    </section>
+  </div>
+
+  <!-- 學習單 -->
+  <section class="panel sheet" aria-label="學習單">
+    <div class="row" style="justify-content:space-between">
+      <h2>工作程序與代碼判讀學習單（課本 p.128–129、133）</h2>
+      <div class="row">
+        <button class="btn" id="checkBtn" type="button">檢查答案</button>
+        <button class="btn" id="ansBtn" type="button">顯示參考答案</button>
+        <button class="btn" id="resetBtn" type="button">清空紀錄</button>
+      </div>
+    </div>
+    <div class="svgbox"><table id="sheet"></table></div>
+  </section>
+
+  <footer>提示：電解電容具正負極性（外殼白條側為負極、較長接腳為正極），量測前應先放電並確認極性正確。</footer>
+</div>
+
+<script>
+(()=>{
+const $=s=>document.querySelector(s);
+const NS="http://www.w3.org/2000/svg";
+const CAP_LIST=[
+  {id:"c100u",v:100e-6,lbl:"100 μF / 25V 電解電容（課本圖 4-17）",polar:true,mark:"100μF 25V"},
+  {id:"c10u",v:10e-6,lbl:"10 μF / 50V 電解電容",polar:true,mark:"10μF 50V"},
+  {id:"c104",v:0.1e-6,lbl:"104K（0.1 μF）陶瓷電容",polar:false,mark:"104K"},
+  {id:"c223",v:0.022e-6,lbl:"223M（0.022 μF）塑膠薄膜電容",polar:false,mark:"223M"},
+  {id:"c472",v:0.0047e-6,lbl:"472J（4.7 nF）陶瓷電容",polar:false,mark:"472J"}
+];
+const RANGES=[
+  {id:"C20n",grp:"C 電容檔",lbl:"20nF",max:20e-9,unit:"nF",dec:2,scale:1e9},
+  {id:"C200n",grp:"C 電容檔",lbl:"200nF",max:200e-9,unit:"nF",dec:1,scale:1e9},
+  {id:"C2u",grp:"C 電容檔",lbl:"2μF",max:2e-6,unit:"μF",dec:3,scale:1e6},
+  {id:"C20u",grp:"C 電容檔",lbl:"20μF",max:20e-6,unit:"μF",dec:2,scale:1e6},
+  {id:"C200u",grp:"C 電容檔",lbl:"200μF",max:200e-6,unit:"μF",dec:1,scale:1e6},
+  {id:"L20m",grp:"其他檔位",lbl:"L 20mH",max:0,unit:"mH",dec:1,scale:1,wrong:"L"}
+];
+const TOL_TBL={B:"±0.1%",C:"±0.25%",D:"±0.5%",F:"±1%",G:"±2%",H:"±2.5%",J:"±5%",K:"±10%",L:"±15%",M:"±20%",N:"±30%"};
+const VOLT_BASE={A:1,B:1.25,C:1.6,D:2,E:2.5,F:3.15,G:4,H:5,I:6.3,J:8};
+
+const st={power:true,hold:false,holdSnap:null,blPressed:true,range:"C200u",jack:"CxLx",probing:true,reversed:false,cap:CAP_LIST[0],actual:95.3e-6,tol:true};
+
+function reroll(exact){
+  if(exact!=null){st.actual=exact;return}
+  st.actual=st.tol?st.cap.v*(1+(Math.random()*2-1)*0.08):st.cap.v;
+}
+
+function drawBoard(){
+  const svg=$("#board");svg.innerHTML="";
+  const el=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);(p||svg).appendChild(e);return e};
+  el("rect",{x:20,y:20,width:560,height:220,rx:12,fill:"#f6f5ef",stroke:"#b8b6aa","stroke-width":2});
+  el("rect",{x:30,y:122,width:540,height:16,rx:4,fill:"#e2e0d5"});
+  for(let c=0;c<24;c++){
+    const x=65+c*20;
+    [62,78,94,110,150,166,182,198].forEach(y=>el("rect",{x:x-2.5,y:y-2.5,width:5,height:5,rx:1,fill:"#6b6a62"}));
+  }
+  const cx=285;
+  el("line",{x1:cx-12,y1:94,x2:cx-12,y2:166,stroke:"#777","stroke-width":3});
+  el("line",{x1:cx+12,y1:94,x2:cx+12,y2:166,stroke:"#777","stroke-width":3});
+  if(st.cap.polar){
+    // 電解電容（左負有白條、右正）
+    el("rect",{x:cx-24,y:86,width:48,height:54,rx:8,fill:"#1e2736",stroke:"#0f151f","stroke-width":2});
+    el("rect",{x:cx-24,y:86,width:12,height:54,rx:4,fill:"#cfd8d2"});
+    el("text",{x:cx-18,y:118,fill:"#1d2622","font-size":14,"font-weight":900,"text-anchor":"middle"}).textContent="−";
+    el("text",{x:cx+8,y:118,fill:"#fff","font-size":13,"font-weight":700,"text-anchor":"middle"}).textContent="+";
+    el("text",{x:cx-12,y:186,fill:"#222","font-size":12,"font-weight":700,"text-anchor":"middle"}).textContent="負極(−)";
+    el("text",{x:cx+12,y:186,fill:"#d23a2f","font-size":12,"font-weight":700,"text-anchor":"middle"}).textContent="正極(+)";
+  }else{
+    // 陶瓷/薄膜圓片電容（無極性）
+    el("circle",{cx:cx,cy:112,r:24,fill:"#d98a3c",stroke:"#8c5016","stroke-width":2});
+    el("text",{x:cx,y:117,fill:"#2b1804","font-size":12,"font-weight":700,"text-anchor":"middle","font-family":"IBM Plex Mono"}).textContent=st.cap.mark;
+    el("text",{x:cx,y:186,fill:"#5d6b64","font-size":12,"text-anchor":"middle"}).textContent="無極性電容";
+  }
+  el("text",{x:cx+40,y:115,fill:"#1d2622","font-size":13,"font-weight":700,"font-family":"IBM Plex Mono"}).textContent=st.cap.mark;
+
+  if(st.probing){
+    const rx=st.reversed?cx-12:cx+12;
+    const kx=st.reversed?cx+12:cx-12;
+    el("path",{d:`M560,72 C460,72 380,166 ${rx},166`,fill:"none",stroke:"#d23a2f","stroke-width":4});
+    el("circle",{cx:rx,cy:166,r:6,fill:"#d23a2f",stroke:"#fff","stroke-width":1.5});
+    el("path",{d:`M560,196 C450,196 360,166 ${kx},166`,fill:"none",stroke:"#222","stroke-width":4});
+    el("circle",{cx:kx,cy:166,r:6,fill:"#222",stroke:"#fff","stroke-width":1.5});
+    el("text",{x:445,y:64,fill:"#d23a2f","font-size":12,"font-weight":700}).textContent="紅夾（CxLx +）";
+    el("text",{x:445,y:214,fill:"#222","font-size":12,"font-weight":700}).textContent="黑夾（CxLx −）";
+  }else{
+    el("text",{x:370,y:95,fill:"#5d6b64","font-size":13,"font-weight":700}).textContent="測棒已移開（開路）";
+  }
+}
+
+function buildDial(){
+  const box=$("#dial");box.innerHTML="";
+  let lastG="";
+  RANGES.forEach(r=>{
+    if(r.grp!==lastG){const g=document.createElement("div");g.className="grp";g.textContent=r.grp;box.appendChild(g);lastG=r.grp}
+    const b=document.createElement("button");b.type="button";b.textContent=r.lbl;b.dataset.id=r.id;
+    if(r.id===st.range)b.className="on";
+    b.addEventListener("click",()=>{
+      st.range=r.id;st.hold=false;st.holdSnap=null;
+      box.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x.dataset.id===r.id));
+      update();
+    });
+    box.appendChild(b);
+  });
+}
+
+function computeReading(){
+  const r=RANGES.find(x=>x.id===st.range);
+  if(!st.power)return {off:true,val:"",unit:"",ol:false,msg:"檢視插座、檔位、極性與 B/L 狀態無誤後，按下 POWER。",cls:""};
+  if(r.wrong)return {val:"0.00",unit:r.unit,ol:false,msg:"目前在 L 檔，量測電容請轉至 C 電容檔！",cls:"warn"};
+  if(st.jack!=="CxLx")return {val:"0.00",unit:r.unit,ol:false,msg:"測棒未接在 CxLx（+ / −）插座，無法量測電容！",cls:"bad"};
+  if(!st.blPressed)return {val:"0.00",unit:"mH",ol:false,msg:"B / L 按鈕目前處於「未按下（L 選項）」，量測電容請按下切換為「C 選項」！",cls:"bad"};
+  if(!st.probing)return {val:"0.00",unit:r.unit,ol:false,msg:"未連接待測電容（顯示 0）。",cls:""};
+  if(st.cap.polar&&st.reversed)return {val:"ERR",unit:r.unit,ol:true,msg:"警告：電解電容具極性！紅棒（+）誤接至負極白條端，請立即更正以免損壞電容或造成讀值異常。",cls:"bad"};
+  if(st.actual>r.max)return {val:"1   ",unit:r.unit,ol:true,msg:`電容量超過 ${r.lbl} 上限（OL），請轉至較高檔位。`,cls:"warn"};
+  const shown=(st.actual*r.scale).toFixed(r.dec);
+  let msg=`量測成功！電容量 = ${shown} ${r.unit}。`;
+  let cls="ok";
+  if(st.actual<r.max*0.05&&r.id!=="C20n"){msg+=" 提示：可切小一檔提升解析度。";cls="warn"}
+  return {val:shown,unit:r.unit,ol:false,msg,cls,log:`[${r.lbl}] ${st.cap.mark} → ${shown} ${r.unit}`};
+}
+
+function updateDecoder(){
+  const [cStr,vStr]=$("#decCode").value.split("|");
+  const d1=+cStr[0],d2=+cStr[1],mul=+cStr[2],tCh=cStr[3];
+  const pF=(d1*10+d2)*Math.pow(10,mul);
+  const uF=pF/1e6;
+  let vTxt=vStr;
+  if(!vStr.endsWith("V")){
+    const pow=+vStr[0],letCh=vStr[1];
+    vTxt=`${vStr} → ${VOLT_BASE[letCh]}×10^${pow} = ${VOLT_BASE[letCh]*Math.pow(10,pow)}V`;
+  }
+  $("#decOut").textContent=`${cStr} = ${d1}${d2} × 10^${mul} pF ${TOL_TBL[tCh]||""} = ${pF.toLocaleString()} pF = ${+uF.toPrecision(4)} μF ${TOL_TBL[tCh]||""} ｜ 耐壓：${vTxt}`;
+}
+
+function update(){
+  drawBoard();
+  const r=RANGES.find(x=>x.id===st.range);
+  const out=st.hold&&st.holdSnap?st.holdSnap:computeReading();
+  st._last=out;
+  $("#lcd").classList.toggle("off",!!out.off);
+  $("#aMode").textContent=out.off?"":(r.wrong||"C");
+  $("#aRange").textContent=out.off?"":r.lbl;
+  $("#aBL").textContent=out.off?"":(st.blPressed?"B/L: C":"B/L: L");
+  $("#aOL").classList.toggle("dim",!out.ol);
+  $("#dVal").textContent=out.off?"":out.val;
+  $("#dUnit").textContent=out.off?"":out.unit;
+  $("#msg").textContent=out.msg;
+  $("#msg").className="msg "+(out.cls||"");
+  $("#pwrBtn").classList.toggle("on",st.power);
+  $("#holdBtn").classList.toggle("on",st.hold);
+  $("#blBtn").classList.toggle("on",st.blPressed);
+  $("#blBtn").textContent=st.blPressed?"B / L（按下=C）":"B / L（未按=L）";
+  $("#probeBtn").textContent=st.probing?"移開測棒":"接上待測電容";
+  $("#revBtn").classList.toggle("on",st.reversed);
+  $("#jacks").querySelectorAll(".jack-btn").forEach(b=>b.classList.toggle("sel",b.dataset.j===st.jack));
+}
+
+const SHEET=[
+  {sec:"一、代碼標示法判讀（課本 p.128–129、課後習題 1–2）"},
+  {k:"unit",label:"1. 電容量的標準單位為何？",type:"sel",opts:["法拉 (F)","亨利 (H)","歐姆 (Ω)","高斯 (G)"],exp:"法拉 (F)"},
+  {k:"c104",label:"2. 電容器標示 104K，其電容量為（μF）",unit:"μF",type:"num",exp:()=>0.1,tol:0.02},
+  {k:"t104",label:"3. 承上題，誤差代碼 K 代表誤差為？",type:"sel",opts:["±5%","±10%","±20%","±1%"],exp:"±10%"},
+  {k:"c223",label:"4. 電容器標示 223M，其電容量為（μF）",unit:"μF",type:"num",exp:()=>0.022,tol:0.02},
+  {k:"v2D",label:"5. 耐壓代碼 2D 查表 4-2 對應之耐壓值",unit:"V",type:"num",exp:()=>200,tol:0.01},
+  {sec:"二、工作程序與量測紀錄（課本 p.133）"},
+  {k:"bl",label:"6. LCR 表量測電容時，B / L 按鈕的狀態應為？",type:"sel",opts:["按下（C 選項）","未按下（L 選項）"],exp:"按下（C 選項）"},
+  {k:"meas",label:"7. 圖 4-17 電解電容（標稱 100μF）之量測值",unit:"μF",type:"num",exp:()=>st.cap.id==="c100u"?st.actual*1e6:95.3,tol:0.08}
+];
+const KEY="ch4-ws3";
+let saved={};try{saved=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){}
+function buildSheet(){
+  const t=$("#sheet");
+  t.innerHTML="<thead><tr><th>項目</th><th>填寫</th><th>單位</th><th>結果</th></tr></thead><tbody></tbody>";
+  const tb=t.querySelector("tbody");
+  SHEET.forEach(r=>{
+    const tr=document.createElement("tr");
+    if(r.sec){tr.className="sec";tr.innerHTML=`<td colspan="4">${r.sec}</td>`;tb.appendChild(tr);return}
+    const inp=r.type==="sel"
+      ?`<select id="ws-${r.k}"><option value="">請選擇</option>${r.opts.map(o=>`<option>${o}</option>`).join("")}</select>`
+      :`<input type="number" step="any" inputmode="decimal" id="ws-${r.k}" aria-label="${r.label}">`;
+    tr.innerHTML=`<td>${r.label}</td><td>${inp}</td><td class="mono">${r.unit||""}</td><td><span class="mark" id="mk-${r.k}"></span> <span class="ans" id="an-${r.k}" hidden></span></td>`;
+    tb.appendChild(tr);
+  });
+  SHEET.forEach(r=>{
+    if(!r.k)return;const e=$("#ws-"+r.k);
+    if(saved[r.k]!=null)e.value=saved[r.k];
+    e.addEventListener("input",()=>{saved[r.k]=e.value;try{localStorage.setItem(KEY,JSON.stringify(saved))}catch(err){}});
+  });
+  fillAns();
+}
+function fillAns(){
+  SHEET.forEach(r=>{
+    if(!r.k)return;const a=$("#an-"+r.k);
+    const v=typeof r.exp==="function"?r.exp():r.exp;
+    a.textContent="參考："+(typeof v==="number"?+v.toPrecision(4):v);
+  });
+}
+function check(){
+  SHEET.forEach(r=>{
+    if(!r.k)return;const e=$("#ws-"+r.k),mk=$("#mk-"+r.k);
+    if(!e.value){mk.textContent="";mk.className="mark";return}
+    const ok=r.type==="sel"?e.value===r.exp:Math.abs(parseFloat(e.value)-r.exp())<=Math.abs(r.exp())*(r.tol||0.03);
+    mk.textContent=ok?"✓ 正確":"✗ 再檢查";mk.className="mark "+(ok?"ok":"bad");
+  });
+}
+
+CAP_LIST.forEach((c,i)=>{const op=document.createElement("option");op.value=i;op.textContent=c.lbl;$("#capSel").appendChild(op)});
+$("#capSel").addEventListener("change",e=>{st.cap=CAP_LIST[+e.target.value];st.reversed=false;reroll();fillAns();update()});
+$("#tolChk").addEventListener("change",e=>{st.tol=e.target.checked;reroll();fillAns();update()});
+$("#reroll").addEventListener("click",()=>{reroll();fillAns();update()});
+$("#revBtn").addEventListener("click",()=>{st.reversed=!st.reversed;update()});
+$("#qBook").addEventListener("click",()=>{st.cap=CAP_LIST[0];st.actual=95.3e-6;st.range="C200u";st.jack="CxLx";st.blPressed=true;st.reversed=false;st.power=true;st.probing=true;$("#capSel").value="0";buildDial();fillAns();update()});
+$("#decCode").addEventListener("change",updateDecoder);
+$("#pwrBtn").addEventListener("click",()=>{st.power=!st.power;st.hold=false;update()});
+$("#holdBtn").addEventListener("click",()=>{if(!st.power)return;st.hold=!st.hold;st.holdSnap=st.hold?computeReading():null;update()});
+$("#blBtn").addEventListener("click",()=>{st.blPressed=!st.blPressed;update()});
+$("#probeBtn").addEventListener("click",()=>{st.probing=!st.probing;update()});
+$("#jacks").addEventListener("click",e=>{const b=e.target.closest(".jack-btn");if(!b)return;st.jack=b.dataset.j;update()});
+$("#logBtn").addEventListener("click",()=>{if(!st._last||!st._last.log)return;const li=document.createElement("li");li.textContent=st._last.log;$("#log").prepend(li)});
+$("#checkBtn").addEventListener("click",check);
+let showAns=false;
+$("#ansBtn").addEventListener("click",()=>{showAns=!showAns;$("#ansBtn").textContent=showAns?"隱藏參考答案":"顯示參考答案";document.querySelectorAll(".ans").forEach(a=>a.hidden=!showAns)});
+let armed=false;
+$("#resetBtn").addEventListener("click",()=>{
+  if(!armed){armed=true;$("#resetBtn").textContent="再按一次確認清空";setTimeout(()=>{armed=false;$("#resetBtn").textContent="清空紀錄"},3000);return}
+  armed=false;$("#resetBtn").textContent="清空紀錄";saved={};try{localStorage.removeItem(KEY)}catch(e){}
+  SHEET.forEach(r=>{if(r.k){$("#ws-"+r.k).value="";$("#mk-"+r.k).textContent=""}});$("#log").innerHTML="";
+});
+
+buildDial();buildSheet();updateDecoder();update();
+})();
+</script>
+<script>
+(()=>{
+const SALT="7c328925d5345127c62f82e1555e3762",ITER=1000000,HASH="8af8779b8313f4456fce0549f52445ac909b92c8bfb2b09393a6b2ff871dae26",KEY="ans-pass";
+const btn=document.getElementById("ansBtn");if(!btn)return;
+const hex2buf=h=>new Uint8Array(h.match(/../g).map(x=>parseInt(x,16)));
+async function derive(pw){
+  const k=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveBits"]);
+  const b=await crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:hex2buf(SALT),iterations:ITER},k,256);
+  return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("");
+}
+const same=(a,b)=>{if(a.length!==b.length)return false;let d=0;for(let i=0;i<a.length;i++)d|=a.charCodeAt(i)^b.charCodeAt(i);return d===0};
+let ok=false;
+const stash=new WeakMap();let busy=false;
+function hideAns(){if(ok)return;busy=true;document.querySelectorAll(".ans").forEach(a=>{if(a.textContent){stash.set(a,a.textContent);a.textContent=""}});busy=false}
+function restoreAns(){document.querySelectorAll(".ans").forEach(a=>{if(stash.has(a)&&!a.textContent)a.textContent=stash.get(a)})}
+hideAns();
+new MutationObserver(()=>{if(!busy&&!ok)hideAns()}).observe(document.body,{subtree:true,childList:true,characterData:true});
+const box=document.createElement("span");box.className="row ans-gate";box.hidden=true;{const s_=document.createElement("style");s_.textContent=".ans-gate[hidden]{display:none!important}";document.head.appendChild(s_)}box.style.gap="6px";
+box.innerHTML='<input type="password" inputmode="numeric" autocomplete="off" placeholder="教師密碼" aria-label="參考答案密碼" style="width:8em;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);font:inherit"><button class="btn" type="button">確定</button><span class="hint" role="status"></span>';
+btn.insertAdjacentElement("afterend",box);
+const inp=box.querySelector("input"),go=box.querySelector("button"),tip=box.querySelector("[role=status]");
+const say=(t,bad)=>{tip.textContent=t;tip.style.color=bad?"var(--bad)":""};
+document.addEventListener("click",e=>{
+  if(e.target!==btn||ok||!btn.textContent.includes("顯示"))return;
+  e.stopImmediatePropagation();e.preventDefault();
+  box.hidden=!box.hidden;say("");if(!box.hidden)inp.focus();
+},true);
+function unlock(pw){ok=true;restoreAns();try{sessionStorage.setItem(KEY,pw)}catch(e){}}
+let fails=0,until=0,checking=false;
+async function tryIt(){
+  if(checking)return;
+  if(!(window.crypto&&crypto.subtle)){say("此瀏覽器不支援安全驗證，請以 https 網址開啟。",true);return}
+  const now=Date.now();if(now<until){say(`請等 ${Math.ceil((until-now)/1000)} 秒再試。`,true);return}
+  const pw=inp.value.trim();if(!pw)return;
+  checking=true;go.disabled=true;say("驗證中…");
+  let good=false;try{good=same(await derive(pw),HASH)}catch(e){}
+  checking=false;go.disabled=false;
+  if(good){fails=0;unlock(pw);box.hidden=true;inp.value="";say("");btn.click()}
+  else{fails++;inp.select();if(fails>=5){until=Date.now()+30000;fails=0;say("密碼錯誤次數過多，請 30 秒後再試。",true)}else say("密碼錯誤",true)}
+}
+go.addEventListener("click",tryIt);inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();tryIt()}});
+let saved=null;try{saved=sessionStorage.getItem(KEY)}catch(e){}
+if(saved&&window.crypto&&crypto.subtle)derive(saved).then(h=>{if(same(h,HASH))unlock(saved);else try{sessionStorage.removeItem(KEY)}catch(e){}}).catch(()=>{});
+})();
+</script>
+</body>
+</html>

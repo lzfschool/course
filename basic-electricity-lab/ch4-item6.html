@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4-5 量測誤差實作</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --bg:#eef1ee;--panel:#ffffff;--ink:#1d2622;--muted:#5d6b64;--line:#cfd8d2;
+  --accent:#1f7a5a;--ok:#1f7a3a;--warn:#b26a00;--bad:#c0392b;
+  --font-body:"Noto Sans TC","Microsoft JhengHei","PingFang TC",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141a17;--panel:#1c2420;--ink:#e3ebe6;--muted:#9aaba2;--line:#33403a;
+  --accent:#4cc395;--ok:#5fd08a;--warn:#f0a83a;--bad:#ff7a6b;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 20px}
+.eyebrow{font-size:12px;letter-spacing:.12em;color:var(--accent);font-weight:700}
+h1{margin:2px 0 0;font-size:clamp(22px,3.4vw,30px);font-weight:900;text-wrap:balance;line-height:1.25}
+.sub{color:var(--muted);font-size:14px;margin:4px 0 0}
+h2{font-size:17px;margin:0;font-weight:700}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button,select,input{font:inherit;color:inherit}
+.btn{border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:5px 11px;cursor:pointer;font-size:14px}
+.btn:hover{border-color:var(--accent)}
+.btn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.hint{font-size:13.5px;color:var(--muted)}
+.mono{font-family:var(--font-mono)}
+.calc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.calc-grid label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:2px}
+.calc-grid input[type=number],.calc-grid input[type=range]{width:100%}
+.calc-grid input[type=number]{padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);font-family:var(--font-mono)}
+.kpi-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.kpi{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.kpi span{display:block;font-size:12px;color:var(--muted)}
+.kpi b{font-family:var(--font-mono);font-size:18px;color:var(--accent)}
+.sheet table{border-collapse:collapse;width:100%;min-width:560px;font-size:14.5px}
+.sheet th,.sheet td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:middle}
+.sheet th{font-size:12.5px;color:var(--muted);font-weight:700}
+.sheet tr.sec td{background:var(--bg);font-weight:700;color:var(--accent)}
+.sheet input[type=number]{width:120px;padding:4px 6px;border:1px solid var(--line);border-radius:5px;background:var(--panel);font-family:var(--font-mono)}
+.sheet select{padding:3px 6px;border:1px solid var(--line);border-radius:5px;background:var(--panel)}
+.mark{font-weight:700;font-size:14px;white-space:nowrap}
+.mark.ok{color:var(--ok)} .mark.bad{color:var(--bad)}
+.ans{font-family:var(--font-mono);color:var(--muted);font-size:13px}
+.ans[hidden]{display:none!important}
+.svgbox{overflow-x:auto}
+footer{font-size:12.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <a href="../index.html?course=basic-electricity-lab&amp;ch=4" style="display:inline-block;font-size:13px;color:var(--accent);text-decoration:none;margin-bottom:4px">← 回實習目錄</a>
+      <div class="eyebrow">基本電學實習 第 4 章 · 4-5 量測誤差實作</div>
+      <h1>4-5 量測誤差、準確度、精密度、靈敏度與有效數字</h1>
+      <p class="sub">互動操作滿刻度準確度表頭、絕對/相對誤差計算器與靈敏度/有效數字分析，並完成課本例題與課後習題演練。</p>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- 卡片 1：滿刻度準確度模擬（例題 2） -->
+    <section class="panel" aria-label="滿刻度準確度與量測位置影響">
+      <h2>1. 滿刻度準確度模擬（課本例題 2）</h2>
+      <p class="hint" style="margin:0">準確度以滿刻度（Full Scale）百分比標示，因此量測點越靠近滿刻度，相對誤差越小。</p>
+      <div class="svgbox">
+        <svg id="gaugeSvg" viewBox="0 0 360 175" role="img" aria-label="指針電表滿刻度準確度示意圖" style="width:100%;height:auto;display:block"></svg>
+      </div>
+      <div class="calc-grid">
+        <div>
+          <label for="fsIn">電表滿刻度值（V）</label>
+          <input type="number" id="fsIn" value="150" min="10" max="1000" step="10">
+        </div>
+        <div>
+          <label for="accIn">滿刻度準確度（±%）</label>
+          <input type="number" id="accIn" value="3" min="0.5" max="10" step="0.5">
+        </div>
+        <div style="grid-column:1/-1">
+          <label for="measSl">目前待測電壓：<span class="mono" id="measLbl">90 V</span>（佔滿刻度 <span class="mono" id="pctLbl">60%</span>）</label>
+          <input type="range" id="measSl" min="10" max="150" step="1" value="90">
+        </div>
+      </div>
+      <div class="kpi-row">
+        <div class="kpi"><span>最大絕對誤差（FS × 準確度）</span><b id="kAbsErr">±4.50 V</b></div>
+        <div class="kpi"><span>在此讀值之相對誤差</span><b id="kRelErr">±5.00 %</b></div>
+      </div>
+    </section>
+
+    <!-- 卡片 2：絕對/相對誤差 + 靈敏度計算器 -->
+    <section class="panel" aria-label="絕對誤差、相對誤差與靈敏度計算器">
+      <h2>2. 絕對 / 相對誤差與靈敏度計算器</h2>
+      <div class="calc-grid">
+        <div>
+          <label for="mVal">量測值 M</label>
+          <input type="number" id="mVal" value="1.5268" step="any">
+        </div>
+        <div>
+          <label for="tVal">真實值 T</label>
+          <input type="number" id="tVal" value="1.5267" step="any">
+        </div>
+      </div>
+      <div class="kpi-row">
+        <div class="kpi"><span>絕對誤差 E = |M − T|</span><b id="eAbs">0.0001</b></div>
+        <div class="kpi"><span>相對誤差 ε% = |M−T|/T × 100%</span><b id="eRel">0.0066 %</b></div>
+      </div>
+
+      <hr style="border:none;border-top:1px solid var(--line);width:100%">
+      <div class="calc-grid">
+        <div>
+          <label for="ifIn">電表滿刻度電流 If（μA）</label>
+          <input type="number" id="ifIn" value="20" min="1" step="1">
+        </div>
+        <div>
+          <label for="rngIn">直流電壓表檔位（V）</label>
+          <input type="number" id="rngIn" value="10" min="1" step="1">
+        </div>
+      </div>
+      <div class="kpi-row">
+        <div class="kpi"><span>靈敏度 S = 1 / If</span><b id="sOut">50 kΩ/V</b></div>
+        <div class="kpi"><span>電壓表內阻 RV = S × 檔位</span><b id="rvOut">500 kΩ</b></div>
+      </div>
+      <div class="row">
+        <button class="btn" type="button" id="ex1Btn">套用課本例題 1</button>
+        <button class="btn" type="button" id="ex5Btn">套用課本例題 5（20μA）</button>
+        <button class="btn" type="button" id="ex20kBtn">常見 20kΩ/V（50μA）</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- 學習單 -->
+  <section class="panel sheet" aria-label="學習單">
+    <div class="row" style="justify-content:space-between">
+      <h2>4-5 量測誤差實作與課後習題學習單（課本 p.148–156）</h2>
+      <div class="row">
+        <button class="btn" id="checkBtn" type="button">檢查答案</button>
+        <button class="btn" id="ansBtn" type="button">顯示參考答案</button>
+        <button class="btn" id="resetBtn" type="button">清空紀錄</button>
+      </div>
+    </div>
+    <div class="svgbox"><table id="sheet"></table></div>
+  </section>
+
+  <footer>整理：巨觀誤差（人為）｜系統誤差（儀器老化、溫濕度環境）｜隨機誤差（待測物品質或設計）。有效數字愈多，解析度與準確度愈高。</footer>
+</div>
+
+<script>
+(()=>{
+const $=s=>document.querySelector(s);
+const NS="http://www.w3.org/2000/svg";
+
+function updateGauge(){
+  const fs=Math.max(10,parseFloat($("#fsIn").value)||150);
+  const acc=Math.max(0.1,parseFloat($("#accIn").value)||3);
+  const sl=$("#measSl");
+  sl.max=fs;
+  let m=parseFloat(sl.value)||90;
+  if(m>fs){m=fs;sl.value=m}
+  const absErr=fs*(acc/100);
+  const relErr=(absErr/m)*100;
+  $("#measLbl").textContent=`${m} V`;
+  $("#pctLbl").textContent=`${Math.round(m/fs*100)}%`;
+  $("#kAbsErr").textContent=`±${absErr.toFixed(2)} V`;
+  $("#kRelErr").textContent=`±${relErr.toFixed(2)} %`;
+
+  // 畫半圓表頭
+  const svg=$("#gaugeSvg");svg.innerHTML="";
+  const el=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);(p||svg).appendChild(e);return e};
+  const cx=180,cy=150,R=120;
+  // 誤差區間底色：前 1/3 紅（誤差大）、中段黃、後 1/3 綠（建議量測區）
+  const arc=(a1,a2,c)=>{
+    const r1=a1*Math.PI/180,r2=a2*Math.PI/180;
+    const x1=cx+R*Math.cos(r1),y1=cy+R*Math.sin(r1),x2=cx+R*Math.cos(r2),y2=cy+R*Math.sin(r2);
+    el("path",{d:`M${x1},${y1} A${R},${R} 0 0 1 ${x2},${y2}`,fill:"none",stroke:c,"stroke-width":14});
+  };
+  arc(190,240,"rgba(210,58,47,.35)");
+  arc(240,295,"rgba(230,185,46,.4)");
+  arc(295,350,"rgba(31,122,90,.45)");
+  // 刻度
+  for(let i=0;i<=10;i++){
+    const ang=(190+i*16)*Math.PI/180;
+    el("line",{x1:cx+(R-10)*Math.cos(ang),y1:cy+(R-10)*Math.sin(ang),x2:cx+(R+8)*Math.cos(ang),y2:cy+(R+8)*Math.sin(ang),stroke:"var(--ink)","stroke-width":i%2?1:2});
+    if(i%2===0){
+      const tx=cx+(R-26)*Math.cos(ang),ty=cy+(R-26)*Math.sin(ang)+4;
+      const t=el("text",{x:tx,y:ty,fill:"var(--muted)","font-size":11,"text-anchor":"middle","font-family":"IBM Plex Mono"});
+      t.textContent=Math.round(fs*i/10);
+    }
+  }
+  // 指針
+  const pAng=(190+(m/fs)*160)*Math.PI/180;
+  el("line",{x1:cx,y1:cy,x2:cx+(R-16)*Math.cos(pAng),y2:cy+(R-16)*Math.sin(pAng),stroke:"var(--bad)","stroke-width":3,"stroke-linecap":"round"});
+  el("circle",{cx,cy,r:7,fill:"var(--ink)"});
+  const tag=el("text",{x:cx,y:cy-32,fill:relErr<=acc*1.5?"var(--ok)":"var(--bad)","font-size":13,"font-weight":700,"text-anchor":"middle"});
+  tag.textContent=relErr<=acc*1.5?"建議量測區（誤差接近滿刻度）":"偏轉角過小（相對誤差放大）";
+}
+
+function updateCalc(){
+  const M=parseFloat($("#mVal").value),T=parseFloat($("#tVal").value);
+  if(!isNaN(M)&&!isNaN(T)&&T!==0){
+    const e=Math.abs(M-T);
+    $("#eAbs").textContent=+e.toPrecision(4);
+    $("#eRel").textContent=((e/Math.abs(T))*100).toFixed(4)+" %";
+  }
+  const If_uA=parseFloat($("#ifIn").value)||20;
+  const rng=parseFloat($("#rngIn").value)||10;
+  const S_k=1000/If_uA; // kΩ/V
+  $("#sOut").textContent=+S_k.toFixed(2)+" kΩ/V";
+  $("#rvOut").textContent=+(S_k*rng).toFixed(1)+" kΩ";
+}
+
+["fsIn","accIn","measSl"].forEach(id=>$("#"+id).addEventListener("input",updateGauge));
+["mVal","tVal","ifIn","rngIn"].forEach(id=>$("#"+id).addEventListener("input",updateCalc));
+$("#ex1Btn").addEventListener("click",()=>{$("#mVal").value=1.5268;$("#tVal").value=1.5267;updateCalc()});
+$("#ex5Btn").addEventListener("click",()=>{$("#ifIn").value=20;$("#rngIn").value=10;updateCalc()});
+$("#ex20kBtn").addEventListener("click",()=>{$("#ifIn").value=50;$("#rngIn").value=10;updateCalc()});
+
+// 學習單（課本例題 + 課後習題 15-20）
+const SHEET=[
+  {sec:"一、誤差分類與基本定義（課本 p.148、課後習題 15–19）"},
+  {k:"q15",label:"1. 引起電表反應時，輸入信號之最小變化量稱為？",type:"sel",opts:["準確度","靈敏度","精密度","解析度"],exp:"解析度"},
+  {k:"q16",label:"2. 電表因濕度、壓力、溫度等引起之量測誤差稱為？",type:"sel",opts:["人為誤差（巨觀誤差）","雜項誤差","系統誤差","理論誤差"],exp:"系統誤差"},
+  {k:"q19",label:"3. 連續多次量測同一變量，各量測值間接近之程度稱為？",type:"sel",opts:["準確度","靈敏度","精密度","解析度"],exp:"精密度"},
+  {sec:"二、誤差、準確度與靈敏度計算（課本例題 2、3、5、6）"},
+  {k:"ex2",label:"4. 電壓表滿刻度 150V、準確度 3%，量測 90V 時的誤差百分率（%）",unit:"%",type:"num",exp:()=>5,tol:0.02},
+  {k:"ex3",label:"5. 量測 10V 電壓多次數據相差不超過 10mV，其精密度（%）",unit:"%",type:"num",exp:()=>99.9,tol:0.01},
+  {k:"ex5",label:"6. 電流表滿刻度電流 If = 20 μA，其靈敏度 S（kΩ/V）",unit:"kΩ/V",type:"num",exp:()=>50,tol:0.02},
+  {k:"ex6",label:"7. 數位電壓表讀值為 8.250 V，其解析度為何（V）？",unit:"V",type:"num",exp:()=>0.001,tol:0.02},
+  {sec:"三、有效數字判讀（課本例題 7、課後習題 17、18、20）"},
+  {k:"q17",label:"8. 某電阻值為 390.0 Ω，其有效位數為幾位？",type:"sel",opts:["4 位","3 位","2 位","1 位"],exp:"4 位"},
+  {k:"q18",label:"9. 204.0 與 204 兩數目，何者準確度較高？",type:"sel",opts:["204.0","204","兩者一樣","無法比較"],exp:"204.0"},
+  {k:"q20",label:"10. 526.0 之有效數字為幾位？",type:"sel",opts:["3 位","4 位","5 位","3 位半"],exp:"4 位"}
+];
+const KEY="ch4-ws6";
+let saved={};try{saved=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){}
+function buildSheet(){
+  const t=$("#sheet");
+  t.innerHTML="<thead><tr><th>項目</th><th>填寫</th><th>單位</th><th>結果</th></tr></thead><tbody></tbody>";
+  const tb=t.querySelector("tbody");
+  SHEET.forEach(r=>{
+    const tr=document.createElement("tr");
+    if(r.sec){tr.className="sec";tr.innerHTML=`<td colspan="4">${r.sec}</td>`;tb.appendChild(tr);return}
+    const inp=r.type==="sel"
+      ?`<select id="ws-${r.k}"><option value="">請選擇</option>${r.opts.map(o=>`<option>${o}</option>`).join("")}</select>`
+      :`<input type="number" step="any" inputmode="decimal" id="ws-${r.k}" aria-label="${r.label}">`;
+    tr.innerHTML=`<td>${r.label}</td><td>${inp}</td><td class="mono">${r.unit||""}</td><td><span class="mark" id="mk-${r.k}"></span> <span class="ans" id="an-${r.k}" hidden></span></td>`;
+    tb.appendChild(tr);
+  });
+  SHEET.forEach(r=>{
+    if(!r.k)return;const e=$("#ws-"+r.k);
+    if(saved[r.k]!=null)e.value=saved[r.k];
+    e.addEventListener("input",()=>{saved[r.k]=e.value;try{localStorage.setItem(KEY,JSON.stringify(saved))}catch(err){}});
+    const a=$("#an-"+r.k);
+    const v=typeof r.exp==="function"?r.exp():r.exp;
+    a.textContent="參考："+v;
+  });
+}
+function check(){
+  SHEET.forEach(r=>{
+    if(!r.k)return;const e=$("#ws-"+r.k),mk=$("#mk-"+r.k);
+    if(!e.value){mk.textContent="";mk.className="mark";return}
+    const ok=r.type==="sel"?e.value===r.exp:Math.abs(parseFloat(e.value)-r.exp())<=Math.abs(r.exp())*(r.tol||0.02);
+    mk.textContent=ok?"✓ 正確":"✗ 再檢查";mk.className="mark "+(ok?"ok":"bad");
+  });
+}
+$("#checkBtn").addEventListener("click",check);
+let showAns=false;
+$("#ansBtn").addEventListener("click",()=>{showAns=!showAns;$("#ansBtn").textContent=showAns?"隱藏參考答案":"顯示參考答案";document.querySelectorAll(".ans").forEach(a=>a.hidden=!showAns)});
+let armed=false;
+$("#resetBtn").addEventListener("click",()=>{
+  if(!armed){armed=true;$("#resetBtn").textContent="再按一次確認清空";setTimeout(()=>{armed=false;$("#resetBtn").textContent="清空紀錄"},3000);return}
+  armed=false;$("#resetBtn").textContent="清空紀錄";saved={};try{localStorage.removeItem(KEY)}catch(e){}
+  SHEET.forEach(r=>{if(r.k){$("#ws-"+r.k).value="";$("#mk-"+r.k).textContent=""}});
+});
+
+buildSheet();updateGauge();updateCalc();
+})();
+</script>
+<script>
+(()=>{
+const SALT="7c328925d5345127c62f82e1555e3762",ITER=1000000,HASH="8af8779b8313f4456fce0549f52445ac909b92c8bfb2b09393a6b2ff871dae26",KEY="ans-pass";
+const btn=document.getElementById("ansBtn");if(!btn)return;
+const hex2buf=h=>new Uint8Array(h.match(/../g).map(x=>parseInt(x,16)));
+async function derive(pw){
+  const k=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveBits"]);
+  const b=await crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:hex2buf(SALT),iterations:ITER},k,256);
+  return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("");
+}
+const same=(a,b)=>{if(a.length!==b.length)return false;let d=0;for(let i=0;i<a.length;i++)d|=a.charCodeAt(i)^b.charCodeAt(i);return d===0};
+let ok=false;
+const stash=new WeakMap();let busy=false;
+function hideAns(){if(ok)return;busy=true;document.querySelectorAll(".ans").forEach(a=>{if(a.textContent){stash.set(a,a.textContent);a.textContent=""}});busy=false}
+function restoreAns(){document.querySelectorAll(".ans").forEach(a=>{if(stash.has(a)&&!a.textContent)a.textContent=stash.get(a)})}
+hideAns();
+new MutationObserver(()=>{if(!busy&&!ok)hideAns()}).observe(document.body,{subtree:true,childList:true,characterData:true});
+const box=document.createElement("span");box.className="row ans-gate";box.hidden=true;{const s_=document.createElement("style");s_.textContent=".ans-gate[hidden]{display:none!important}";document.head.appendChild(s_)}box.style.gap="6px";
+box.innerHTML='<input type="password" inputmode="numeric" autocomplete="off" placeholder="教師密碼" aria-label="參考答案密碼" style="width:8em;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);font:inherit"><button class="btn" type="button">確定</button><span class="hint" role="status"></span>';
+btn.insertAdjacentElement("afterend",box);
+const inp=box.querySelector("input"),go=box.querySelector("button"),tip=box.querySelector("[role=status]");
+const say=(t,bad)=>{tip.textContent=t;tip.style.color=bad?"var(--bad)":""};
+document.addEventListener("click",e=>{
+  if(e.target!==btn||ok||!btn.textContent.includes("顯示"))return;
+  e.stopImmediatePropagation();e.preventDefault();
+  box.hidden=!box.hidden;say("");if(!box.hidden)inp.focus();
+},true);
+function unlock(pw){ok=true;restoreAns();try{sessionStorage.setItem(KEY,pw)}catch(e){}}
+let fails=0,until=0,checking=false;
+async function tryIt(){
+  if(checking)return;
+  if(!(window.crypto&&crypto.subtle)){say("此瀏覽器不支援安全驗證，請以 https 網址開啟。",true);return}
+  const now=Date.now();if(now<until){say(`請等 ${Math.ceil((until-now)/1000)} 秒再試。`,true);return}
+  const pw=inp.value.trim();if(!pw)return;
+  checking=true;go.disabled=true;say("驗證中…");
+  let good=false;try{good=same(await derive(pw),HASH)}catch(e){}
+  checking=false;go.disabled=false;
+  if(good){fails=0;unlock(pw);box.hidden=true;inp.value="";say("");btn.click()}
+  else{fails++;inp.select();if(fails>=5){until=Date.now()+30000;fails=0;say("密碼錯誤次數過多，請 30 秒後再試。",true)}else say("密碼錯誤",true)}
+}
+go.addEventListener("click",tryIt);inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();tryIt()}});
+let saved=null;try{saved=sessionStorage.getItem(KEY)}catch(e){}
+if(saved&&window.crypto&&crypto.subtle)derive(saved).then(h=>{if(same(h,HASH))unlock(saved);else try{sessionStorage.removeItem(KEY)}catch(e){}}).catch(()=>{});
+})();
+</script>
+</body>
+</html>

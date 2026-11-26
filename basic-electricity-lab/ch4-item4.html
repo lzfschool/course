@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>工作項目 4：信號產生器之調整（SFG-2120）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --bg:#eef1ee;--panel:#ffffff;--ink:#1d2622;--muted:#5d6b64;--line:#cfd8d2;
+  --accent:#1f7a5a;--ok:#1f7a3a;--warn:#b26a00;--bad:#c0392b;
+  --fg-body:#383f45;--fg-face:#d9dde0;--fg-screen:#0f1914;--fg-led:#53f28c;
+  --font-body:"Noto Sans TC","Microsoft JhengHei","PingFang TC",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141a17;--panel:#1c2420;--ink:#e3ebe6;--muted:#9aaba2;--line:#33403a;
+  --accent:#4cc395;--ok:#5fd08a;--warn:#f0a83a;--bad:#ff7a6b;--fg-face:#2b3238;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 20px}
+.eyebrow{font-size:12px;letter-spacing:.12em;color:var(--accent);font-weight:700}
+h1{margin:2px 0 0;font-size:clamp(22px,3.4vw,30px);font-weight:900;text-wrap:balance;line-height:1.25}
+.sub{color:var(--muted);font-size:14px;margin:4px 0 0}
+h2{font-size:17px;margin:0;font-weight:700}
+.grid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:20px}
+@media (max-width:920px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button,select,input{font:inherit;color:inherit}
+.btn{border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:5px 11px;cursor:pointer;font-size:14px}
+.btn:hover{border-color:var(--accent)}
+.btn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.hint{font-size:13.5px;color:var(--muted)}
+.mono{font-family:var(--font-mono)}
+/* SFG-2120 面板 */
+.fg{background:var(--fg-body);color:#eef3f0;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px;box-shadow:inset 0 0 0 3px rgba(0,0,0,.3)}
+.fg-top{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:14px;align-items:stretch}
+@media (max-width:600px){.fg-top{grid-template-columns:1fr}}
+.fg-screen{background:var(--fg-screen);border:4px solid #1e2326;border-radius:8px;padding:10px 14px;display:flex;flex-direction:column;justify-content:space-between;min-height:112px;font-family:var(--font-mono);color:var(--fg-led)}
+.fg-screen.off{color:rgba(83,242,140,.08)}
+.fg-badges{display:flex;justify-content:space-between;font-size:12px;gap:6px;flex-wrap:wrap}
+.fg-badges .dim{opacity:.2}
+.fg-freq{font-size:clamp(28px,5vw,40px);font-weight:600;text-align:right;letter-spacing:.05em;font-variant-numeric:tabular-nums;line-height:1.1}
+.fg-sub{font-size:12px;display:flex;justify-content:space-between;opacity:.85}
+.keypad{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.keypad button{border:1px solid rgba(255,255,255,.22);background:#525b63;color:#fff;border-radius:6px;padding:6px 2px;cursor:pointer;font-family:var(--font-mono);font-size:12.5px;font-weight:600;display:flex;flex-direction:column;align-items:center;line-height:1.15}
+.keypad button small{font-size:9.5px;color:#ffd84a;font-weight:400}
+.keypad button:hover{background:#66717b}
+.keypad button.hi{background:#1f7a5a;border-color:#4cc395}
+.keypad button.shift-on{background:#e6b92e;color:#1b1a0c;border-color:#ffd84a}
+.fg-knobs{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;background:rgba(0,0,0,.22);padding:10px 12px;border-radius:10px}
+.knob-box{display:flex;flex-direction:column;gap:4px;font-size:12.5px}
+.knob-box input[type=range]{width:100%}
+.fg-msg{border-radius:8px;padding:8px 10px;font-size:13.5px;background:rgba(255,255,255,.92);color:#1d2622}
+.fg-msg.ok{background:#dff3e5;color:#13492a}
+.fg-msg.warn{background:#fff0cf;color:#6a4200}
+/* 即時波形監視器 */
+.scope-mini{background:#0d1a16;border:4px solid #26312d;border-radius:10px;padding:10px;color:#9cf2c8}
+.scope-mini svg{width:100%;height:auto;display:block}
+.readout{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;font-family:var(--font-mono);font-size:13px;margin-top:8px}
+.readout div{background:rgba(255,255,255,.06);padding:6px 8px;border-radius:6px}
+.readout b{color:#53f28c;display:block;font-size:15px}
+/* 學習單 */
+.sheet table{border-collapse:collapse;width:100%;min-width:560px;font-size:14.5px}
+.sheet th,.sheet td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:middle}
+.sheet th{font-size:12.5px;color:var(--muted);font-weight:700}
+.sheet tr.sec td{background:var(--bg);font-weight:700;color:var(--accent)}
+.sheet input[type=text],.sheet input[type=number]{width:150px;padding:4px 6px;border:1px solid var(--line);border-radius:5px;background:var(--panel);font-family:var(--font-mono)}
+.sheet select{padding:3px 6px;border:1px solid var(--line);border-radius:5px;background:var(--panel)}
+.mark{font-weight:700;font-size:14px;white-space:nowrap}
+.mark.ok{color:var(--ok)} .mark.bad{color:var(--bad)}
+.ans{font-family:var(--font-mono);color:var(--muted);font-size:13px}
+.ans[hidden]{display:none!important}
+.svgbox{overflow-x:auto}
+footer{font-size:12.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <a href="../index.html?course=basic-electricity-lab&amp;ch=4" style="display:inline-block;font-size:13px;color:var(--accent);text-decoration:none;margin-bottom:4px">← 回實習目錄</a>
+      <div class="eyebrow">基本電學實習 第 4 章 · 4-3 信號產生器之使用</div>
+      <h1>工作項目 4：信號產生器之調整</h1>
+      <p class="sub">操作 SFG-2120 數位函數波信號產生器：按 WAVE 切換正弦/方/三角波，用數字鍵＋單位鍵設定頻率，按 SHIFT+8 啟用 −20dB 衰減（電壓變 1/10），調整 AMPL 輸出振幅。</p>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- 左：SFG-2120 面板 -->
+    <section class="panel" aria-label="信號產生器 SFG-2120 面板">
+      <div class="row" style="justify-content:space-between">
+        <h2>圖 4-18　信號產生器（SFG-2120）面板</h2>
+        <div class="row">
+          <button class="btn on" id="pwrBtn" type="button">POWER 開啟</button>
+        </div>
+      </div>
+
+      <div class="fg">
+        <div class="fg-top">
+          <div class="fg-screen" id="fgScreen" aria-live="polite">
+            <div class="fg-badges">
+              <span id="bWave">WAVE: 正弦波 (~)</span>
+              <span id="bAtt" class="dim">-20dB</span>
+              <span id="bShift" class="dim">SHIFT</span>
+            </div>
+            <div class="fg-freq" id="fgFreq">250.0 Hz</div>
+            <div class="fg-sub">
+              <span id="fgBuf">輸入緩衝：—</span>
+              <span id="fgAmpTxt">OUTPUT: 250 mVp-p</span>
+            </div>
+          </div>
+
+          <div class="keypad" id="keypad" aria-label="功能與數字按鍵">
+            <button type="button" data-k="SHIFT" id="kShift"><small>功能切換</small>SHIFT</button>
+            <button type="button" data-k="7"><small>DUTY</small>7</button>
+            <button type="button" data-k="8"><small>-20dB</small>8</button>
+            <button type="button" data-k="9"><small>TTL</small>9</button>
+
+            <button type="button" data-k="WAVE" class="hi"><small>波形</small>WAVE</button>
+            <button type="button" data-k="4"><small>4</small>4</button>
+            <button type="button" data-k="5"><small>5</small>5</button>
+            <button type="button" data-k="6"><small>STORE</small>6</button>
+
+            <button type="button" data-k="MHz" class="hi"><small>單位</small>MHz</button>
+            <button type="button" data-k="1"><small>DEFAULT</small>1</button>
+            <button type="button" data-k="2"><small>RECALL</small>2</button>
+            <button type="button" data-k="3"><small>3</small>3</button>
+
+            <button type="button" data-k="kHz" class="hi"><small>單位</small>kHz</button>
+            <button type="button" data-k="0"><small>0</small>0</button>
+            <button type="button" data-k="."><small>小數點</small>.</button>
+            <button type="button" data-k="Hz" class="hi"><small>單位</small>Hz/%</button>
+          </div>
+        </div>
+
+        <div class="fg-knobs">
+          <div class="knob-box">
+            <label for="amplSl">AMPL 輸出振幅旋鈕（未衰減 0.5–10 Vp-p）</label>
+            <input type="range" id="amplSl" min="0.5" max="10" step="0.1" value="2.5">
+            <span class="mono" id="amplLbl">旋鈕：2.5 Vp-p → 實際輸出：250 mVp-p</span>
+          </div>
+          <div class="knob-box">
+            <label for="offSl">OFFSET 抵補電壓（−5V ～ +5V）</label>
+            <input type="range" id="offSl" min="-5" max="5" step="0.5" value="0">
+            <span class="mono" id="offLbl">DC Offset：0.0 V</span>
+          </div>
+          <div class="knob-box">
+            <label for="dutySl">方波工作週期 Duty Cycle（20%–80%）</label>
+            <input type="range" id="dutySl" min="20" max="80" step="5" value="50">
+            <span class="mono" id="dutyLbl">Duty：50%</span>
+          </div>
+        </div>
+
+        <div class="fg-msg" id="fgMsg" role="status">操作方式：先按數字鍵（如 2 → 5 → 0），再按單位鍵（Hz/%、kHz、MHz）即可設定頻率；按 SHIFT 再按 8 可切換 −20dB 衰減。</div>
+      </div>
+
+      <div class="row">
+        <span class="hint">課本任務快速套用：</span>
+        <button class="btn" type="button" id="pDemo">課本示範：250Hz / 250mVp-p</button>
+        <button class="btn" type="button" id="pEx1">實務練習 1：2kHz / 2Vp-p</button>
+        <button class="btn" type="button" id="pEx2">實務練習 2：5kHz / 10Vp-p</button>
+      </div>
+    </section>
+
+    <!-- 右：即時輸出波形預覽 -->
+    <section class="panel" aria-label="示波器監看視窗">
+      <h2>OUTPUT 即時波形監看</h2>
+      <div class="scope-mini">
+        <svg id="waveSvg" viewBox="0 0 400 260" role="img" aria-label="信號產生器輸出波形"></svg>
+        <div class="readout">
+          <div>頻率 f<b id="roF">250.0 Hz</b></div>
+          <div>週期 T = 1/f<b id="roT">4.00 ms</b></div>
+          <div>峰對峰值 Vp-p<b id="roVpp">250 mVp-p</b></div>
+          <div>最大值 Vm / 有效值<b id="roVrms">0.125V / 0.088V</b></div>
+        </div>
+      </div>
+      <div class="hint" id="eqTxt">數學式：v(t) = 0.125 sin(2π · 250 · t) V</div>
+      <div class="hint">按鍵歷史：<span class="mono" id="keyHist">WAVE(~) → 2 5 0 Hz → SHIFT+8 (-20dB)</span></div>
+    </section>
+  </div>
+
+  <!-- 學習單 -->
+  <section class="panel sheet" aria-label="學習單">
+    <div class="row" style="justify-content:space-between">
+      <h2>工作程序與實務操作練習學習單（課本 p.143–144）</h2>
+      <div class="row">
+        <button class="btn" id="checkBtn" type="button">檢查答案</button>
+        <button class="btn" id="ansBtn" type="button">顯示參考答案</button>
+        <button class="btn" id="resetBtn" type="button">清空紀錄</button>
+      </div>
+    </div>
+    <div class="svgbox"><table id="sheet"></table></div>
+  </section>
+
+  <footer>提示：−20 dB 對應電壓衰減倍率為 10^(−20/20) = 1/10（衰減 10 倍），因此旋鈕 2.5 Vp-p 經 −20dB 後輸出 250 mVp-p。</footer>
+</div>
+
+<script>
+(()=>{
+const $=s=>document.querySelector(s);
+const NS="http://www.w3.org/2000/svg";
+const WAVES=[{id:"sine",lbl:"正弦波 (~)"},{id:"square",lbl:"方波 (⊓)"},{id:"tri",lbl:"三角波 (∧)"}];
+const st={power:true,waveIdx:0,freqHz:250,buf:"",shift:false,att20:true,amplBase:2.5,offset:0,duty:50,hist:["WAVE(~)","250 Hz","SHIFT+8 (-20dB)"]};
+
+function vppActual(){return st.att20?st.amplBase/10:st.amplBase}
+function fmtFreq(hz){
+  if(hz>=1e6)return (hz/1e6).toPrecision(4).replace(/\.?0+$/,"")+" MHz";
+  if(hz>=1e3)return (hz/1e3).toPrecision(4).replace(/\.?0+$/,"")+" kHz";
+  return (+hz.toFixed(1))+" Hz";
+}
+function fmtTime(sec){
+  if(sec<1e-6)return (sec*1e9).toFixed(1)+" ns";
+  if(sec<1e-3)return (sec*1e6).toFixed(1)+" μs";
+  if(sec<1)return (sec*1e3).toFixed(2)+" ms";
+  return sec.toFixed(3)+" s";
+}
+function fmtVpp(v){return v<1?(v*1000).toFixed(0)+" mVp-p":v.toFixed(2).replace(/\.00$/,"")+" Vp-p"}
+
+function drawWave(){
+  const svg=$("#waveSvg");svg.innerHTML="";
+  const el=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);(p||svg).appendChild(e);return e};
+  // 8x10 格線
+  for(let i=0;i<=10;i++)el("line",{x1:i*40,y1:0,x2:i*40,y2:260,stroke:i===5?"rgba(83,242,140,.45)":"rgba(83,242,140,.16)","stroke-width":i===5?1.5:1});
+  for(let j=0;j<=8;j++)el("line",{x1:0,y1:j*32.5,x2:400,y2:j*32.5,stroke:j===4?"rgba(83,242,140,.45)":"rgba(83,242,140,.16)","stroke-width":j===4?1.5:1});
+  if(!st.power)return;
+  const vpp=vppActual(),vm=vpp/2;
+  // 自動縮放垂直刻度使波形美觀（2~6格高）
+  const vDiv=Math.max(0.05,vpp/4.5);
+  const cy=130,pxPerV=32.5/vDiv;
+  const cycles=2.5;
+  const pts=[];
+  const wType=WAVES[st.waveIdx].id;
+  for(let x=0;x<=400;x+=2){
+    const ph=(x/400)*cycles;
+    const frac=ph-Math.floor(ph);
+    let yNorm=0;
+    if(wType==="sine")yNorm=Math.sin(2*Math.PI*ph);
+    else if(wType==="square")yNorm=frac<(st.duty/100)?1:-1;
+    else yNorm=frac<0.25?4*frac:(frac<0.75?2-4*frac:4*frac-4);
+    const v=st.offset+vm*yNorm;
+    const py=Math.max(4,Math.min(256,cy-v*pxPerV));
+    pts.push(`${x},${py.toFixed(1)}`);
+  }
+  el("polyline",{points:pts.join(" "),fill:"none",stroke:"#53f28c","stroke-width":2.6,"stroke-linejoin":"round"});
+  el("text",{x:8,y:16,fill:"#9cf2c8","font-size":11,"font-family":"IBM Plex Mono"}).textContent=`自動監視刻度：約 ${vDiv>=1?vDiv.toFixed(2)+" V/DIV":(vDiv*1000).toFixed(0)+" mV/DIV"} ｜ 顯示 2.5 週期`;
+}
+
+function update(){
+  $("#fgScreen").classList.toggle("off",!st.power);
+  $("#pwrBtn").classList.toggle("on",st.power);
+  $("#pwrBtn").textContent=st.power?"POWER 開啟":"POWER 關閉";
+  const w=WAVES[st.waveIdx];
+  $("#bWave").textContent="WAVE: "+w.lbl;
+  $("#bAtt").classList.toggle("dim",!st.att20);
+  $("#bShift").classList.toggle("dim",!st.shift);
+  $("#kShift").classList.toggle("shift-on",st.shift);
+  $("#fgFreq").textContent=fmtFreq(st.freqHz);
+  $("#fgBuf").textContent="輸入緩衝："+(st.buf||"—");
+  const vpp=vppActual();
+  $("#fgAmpTxt").textContent="OUTPUT: "+fmtVpp(vpp);
+  $("#amplLbl").textContent=`旋鈕：${st.amplBase.toFixed(1)} Vp-p → 實際輸出：${fmtVpp(vpp)}${st.att20?"（已 −20dB）":""}`;
+  $("#offLbl").textContent=`DC Offset：${st.offset>=0?"+":""}${st.offset.toFixed(1)} V`;
+  $("#dutyLbl").textContent=`Duty：${st.duty}%`;
+  $("#roF").textContent=fmtFreq(st.freqHz);
+  $("#roT").textContent=fmtTime(1/st.freqHz);
+  $("#roVpp").textContent=fmtVpp(vpp);
+  const vm=vpp/2;
+  const vrms=w.id==="sine"?vm/Math.SQRT2:(w.id==="square"?vm:vm/Math.sqrt(3));
+  $("#roVrms").textContent=`${vm.toFixed(3)}V / ${vrms.toFixed(3)}V`;
+  $("#eqTxt").textContent=w.id==="sine"
+    ?`正弦波數學式：v(t) = ${st.offset?st.offset+" + ":""}${vm.toFixed(3)} sin(2π · ${st.freqHz} · t) V`
+    :`目前波形：${w.lbl}，頻率 ${fmtFreq(st.freqHz)}，振幅 ${fmtVpp(vpp)}。`;
+  $("#keyHist").textContent=st.hist.slice(-6).join(" → ");
+  drawWave();
+}
+
+function pushHist(s){st.hist.push(s);if(st.hist.length>12)st.hist.shift()}
+
+$("#keypad").addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b||!st.power)return;
+  const k=b.dataset.k;
+  if(k==="SHIFT"){st.shift=!st.shift;$("#fgMsg").textContent=st.shift?"SHIFT 已亮起：請按 8 (-20dB) 或 1 (DEFAULT)。":"已取消 SHIFT。";$("#fgMsg").className="fg-msg";update();return}
+  if(k==="WAVE"){st.waveIdx=(st.waveIdx+1)%3;st.shift=false;pushHist("WAVE("+WAVES[st.waveIdx].lbl+")");$("#fgMsg").textContent="已切換為 "+WAVES[st.waveIdx].lbl;$("#fgMsg").className="fg-msg ok";update();return}
+  if(st.shift){
+    st.shift=false;
+    if(k==="8"){st.att20=!st.att20;pushHist("SHIFT+8 ("+(st.att20?"-20dB ON":"-20dB OFF")+")");$("#fgMsg").textContent=st.att20?"已啟用 −20dB 衰減（輸出電壓降為 1/10）。":"已關閉 −20dB 衰減。";$("#fgMsg").className="fg-msg ok";update();return}
+    if(k==="1"){st.waveIdx=0;st.freqHz=1000;st.att20=false;st.amplBase=5;st.offset=0;st.duty=50;$("#amplSl").value=5;$("#offSl").value=0;$("#dutySl").value=50;pushHist("SHIFT+1 (DEFAULT)");$("#fgMsg").textContent="已還原出廠預設值（1kHz 正弦波）。";$("#fgMsg").className="fg-msg";update();return}
+    $("#fgMsg").textContent=`已執行 SHIFT + ${k}。`;update();return;
+  }
+  if("0123456789.".includes(k)){
+    if(k==="."&&st.buf.includes("."))return;
+    if(st.buf.length<7)st.buf+=k;
+    $("#fgMsg").textContent=`已輸入數字「${st.buf}」，請再按單位鍵（Hz/%、kHz、MHz）完成頻率設定。`;$("#fgMsg").className="fg-msg";
+    update();return;
+  }
+  if(k==="Hz"||k==="kHz"||k==="MHz"){
+    const val=parseFloat(st.buf);
+    if(!isNaN(val)&&val>0){
+      const mul=k==="MHz"?1e6:(k==="kHz"?1e3:1);
+      st.freqHz=Math.min(6e6,Math.max(1,val*mul));
+      pushHist(st.buf+" "+k);
+      $("#fgMsg").textContent=`頻率已設定為 ${fmtFreq(st.freqHz)}！`;$("#fgMsg").className="fg-msg ok";
+    }else{
+      $("#fgMsg").textContent="請先按數字鍵再按單位鍵。";$("#fgMsg").className="fg-msg warn";
+    }
+    st.buf="";update();
+  }
+});
+
+$("#pwrBtn").addEventListener("click",()=>{st.power=!st.power;update()});
+$("#amplSl").addEventListener("input",e=>{st.amplBase=+e.target.value;update()});
+$("#offSl").addEventListener("input",e=>{st.offset=+e.target.value;update()});
+$("#dutySl").addEventListener("input",e=>{st.duty=+e.target.value;update()});
+$("#pDemo").addEventListener("click",()=>{st.power=true;st.waveIdx=0;st.freqHz=250;st.att20=true;st.amplBase=2.5;st.offset=0;$("#amplSl").value=2.5;$("#offSl").value=0;pushHist("示範 250Hz/250mVp-p");$("#fgMsg").textContent="已套用課本示範：250Hz / 250mVp-p 正弦波（開啟 −20dB）。";$("#fgMsg").className="fg-msg ok";update()});
+$("#pEx1").addEventListener("click",()=>{st.power=true;st.waveIdx=0;st.freqHz=2000;st.att20=false;st.amplBase=2;st.offset=0;$("#amplSl").value=2;$("#offSl").value=0;pushHist("練習1 2kHz/2Vp-p");$("#fgMsg").textContent="已套用練習 1：2kHz / 2Vp-p 正弦波（不需 −20dB）。";$("#fgMsg").className="fg-msg ok";update()});
+$("#pEx2").addEventListener("click",()=>{st.power=true;st.waveIdx=0;st.freqHz=5000;st.att20=false;st.amplBase=10;st.offset=0;$("#amplSl").value=10;$("#offSl").value=0;pushHist("練習2 5kHz/10Vp-p");$("#fgMsg").textContent="已套用練習 2：5kHz / 10Vp-p 正弦波。";$("#fgMsg").className="fg-msg ok";update()});
+
+// 學習單
+const SHEET=[
+  {sec:"一、實務操作練習 1：調整 2 kHz / 2 Vp-p 正弦波（課本 p.143）"},
+  {k:"e1w",label:"1. 開啟電源，按何鍵選擇正弦波？",type:"sel",opts:["WAVE 鍵","SHIFT 鍵","kHz 鍵"],exp:"WAVE 鍵"},
+  {k:"e1k",label:"2. 頻率調整：數字鍵應鍵入（如 2 kHz）",type:"sel",opts:["2 → kHz","2 → Hz/%","2 → 0 → 0 → Hz/%","2 → MHz"],exp:"2 → kHz"},
+  {k:"e1t",label:"3. 此 2 kHz 信號的週期 T 為（ms）",unit:"ms",type:"num",exp:()=>0.5,tol:0.02},
+  {sec:"二、實務操作練習 2：調整 5 kHz / 10 Vp-p 正弦波（課本 p.144）"},
+  {k:"e2k",label:"4. 頻率調整：數字鍵應鍵入",type:"sel",opts:["5 → kHz","5 → Hz/%","5 → MHz"],exp:"5 → kHz"},
+  {k:"e2t",label:"5. 此 5 kHz 信號的週期 T 為（μs）",unit:"μs",type:"num",exp:()=>200,tol:0.02},
+  {sec:"三、重要觀念（課本 p.136、課後習題 4、5、7）"},
+  {k:"att",label:"6. 信號產生器標示「−20 dB」相當於電壓被衰減幾倍？",type:"sel",opts:["2 倍","10 倍","20 倍","100 倍"],exp:"10 倍"},
+  {k:"duty",label:"7. 標準方波之工作週期（Duty Cycle）為何？",type:"sel",opts:["100%","75%","50%","25%"],exp:"50%"},
+  {k:"pw",label:"8. 有一 1 kHz 脈波，若工作週期為 20%，則脈波寬度為何（ms）？",unit:"ms",type:"num",exp:()=>0.2,tol:0.02}
+];
+const KEY="ch4-ws4";
+let saved={};try{saved=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){}
+function buildSheet(){
+  const t=$("#sheet");
+  t.innerHTML="<thead><tr><th>項目</th><th>填寫</th><th>單位</th><th>結果</th></tr></thead><tbody></tbody>";
+  const tb=t.querySelector("tbody");
+  SHEET.forEach(r=>{
+    const tr=document.createElement("tr");
+    if(r.sec){tr.className="sec";tr.innerHTML=`<td colspan="4">${r.sec}</td>`;tb.appendChild(tr);return}
+    const inp=r.type==="sel"
+      ?`<select id="ws-${r.k}"><option value="">請選擇</option>${r.opts.map(o=>`<option>${o}</option>`).join("")}</select>`
+      :`<input type="number" step="any" inputmode="decimal" id="ws-${r.k}" aria-label="${r.label}">`;
+    tr.innerHTML=`<td>${r.label}</td><td>${inp}</td><td class="mono">${r.unit||""}</td><td><span class="mark" id="mk-${r.k}"></span> <span class="ans" id="an-${r.k}" hidden></span></td>`;
+    tb.appendChild(tr);
+  });
+  SHEET.forEach(r=>{
+    if(!r.k)return;const e=$("#ws-"+r.k);
+    if(saved[r.k]!=null)e.value=saved[r.k];
+    e.addEventListener("input",()=>{saved[r.k]=e.value;try{localStorage.setItem(KEY,JSON.stringify(saved))}catch(err){}});
+  });
+  SHEET.forEach(r=>{
+    if(!r.k)return;const a=$("#an-"+r.k);
+    const v=typeof r.exp==="function"?r.exp():r.exp;
+    a.textContent="參考："+v;
+  });
+}
+function check(){
+  SHEET.forEach(r=>{
+    if(!r.k)return;const e=$("#ws-"+r.k),mk=$("#mk-"+r.k);
+    if(!e.value){mk.textContent="";mk.className="mark";return}
+    const ok=r.type==="sel"?e.value===r.exp:Math.abs(parseFloat(e.value)-r.exp())<=Math.abs(r.exp())*(r.tol||0.02);
+    mk.textContent=ok?"✓ 正確":"✗ 再檢查";mk.className="mark "+(ok?"ok":"bad");
+  });
+}
+$("#checkBtn").addEventListener("click",check);
+let showAns=false;
+$("#ansBtn").addEventListener("click",()=>{showAns=!showAns;$("#ansBtn").textContent=showAns?"隱藏參考答案":"顯示參考答案";document.querySelectorAll(".ans").forEach(a=>a.hidden=!showAns)});
+let armed=false;
+$("#resetBtn").addEventListener("click",()=>{
+  if(!armed){armed=true;$("#resetBtn").textContent="再按一次確認清空";setTimeout(()=>{armed=false;$("#resetBtn").textContent="清空紀錄"},3000);return}
+  armed=false;$("#resetBtn").textContent="清空紀錄";saved={};try{localStorage.removeItem(KEY)}catch(e){}
+  SHEET.forEach(r=>{if(r.k){$("#ws-"+r.k).value="";$("#mk-"+r.k).textContent=""}});
+});
+
+buildSheet();update();
+})();
+</script>
+<script>
+(()=>{
+const SALT="7c328925d5345127c62f82e1555e3762",ITER=1000000,HASH="8af8779b8313f4456fce0549f52445ac909b92c8bfb2b09393a6b2ff871dae26",KEY="ans-pass";
+const btn=document.getElementById("ansBtn");if(!btn)return;
+const hex2buf=h=>new Uint8Array(h.match(/../g).map(x=>parseInt(x,16)));
+async function derive(pw){
+  const k=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveBits"]);
+  const b=await crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:hex2buf(SALT),iterations:ITER},k,256);
+  return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("");
+}
+const same=(a,b)=>{if(a.length!==b.length)return false;let d=0;for(let i=0;i<a.length;i++)d|=a.charCodeAt(i)^b.charCodeAt(i);return d===0};
+let ok=false;
+const stash=new WeakMap();let busy=false;
+function hideAns(){if(ok)return;busy=true;document.querySelectorAll(".ans").forEach(a=>{if(a.textContent){stash.set(a,a.textContent);a.textContent=""}});busy=false}
+function restoreAns(){document.querySelectorAll(".ans").forEach(a=>{if(stash.has(a)&&!a.textContent)a.textContent=stash.get(a)})}
+hideAns();
+new MutationObserver(()=>{if(!busy&&!ok)hideAns()}).observe(document.body,{subtree:true,childList:true,characterData:true});
+const box=document.createElement("span");box.className="row ans-gate";box.hidden=true;{const s_=document.createElement("style");s_.textContent=".ans-gate[hidden]{display:none!important}";document.head.appendChild(s_)}box.style.gap="6px";
+box.innerHTML='<input type="password" inputmode="numeric" autocomplete="off" placeholder="教師密碼" aria-label="參考答案密碼" style="width:8em;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);font:inherit"><button class="btn" type="button">確定</button><span class="hint" role="status"></span>';
+btn.insertAdjacentElement("afterend",box);
+const inp=box.querySelector("input"),go=box.querySelector("button"),tip=box.querySelector("[role=status]");
+const say=(t,bad)=>{tip.textContent=t;tip.style.color=bad?"var(--bad)":""};
+document.addEventListener("click",e=>{
+  if(e.target!==btn||ok||!btn.textContent.includes("顯示"))return;
+  e.stopImmediatePropagation();e.preventDefault();
+  box.hidden=!box.hidden;say("");if(!box.hidden)inp.focus();
+},true);
+function unlock(pw){ok=true;restoreAns();try{sessionStorage.setItem(KEY,pw)}catch(e){}}
+let fails=0,until=0,checking=false;
+async function tryIt(){
+  if(checking)return;
+  if(!(window.crypto&&crypto.subtle)){say("此瀏覽器不支援安全驗證，請以 https 網址開啟。",true);return}
+  const now=Date.now();if(now<until){say(`請等 ${Math.ceil((until-now)/1000)} 秒再試。`,true);return}
+  const pw=inp.value.trim();if(!pw)return;
+  checking=true;go.disabled=true;say("驗證中…");
+  let good=false;try{good=same(await derive(pw),HASH)}catch(e){}
+  checking=false;go.disabled=false;
+  if(good){fails=0;unlock(pw);box.hidden=true;inp.value="";say("");btn.click()}
+  else{fails++;inp.select();if(fails>=5){until=Date.now()+30000;fails=0;say("密碼錯誤次數過多，請 30 秒後再試。",true)}else say("密碼錯誤",true)}
+}
+go.addEventListener("click",tryIt);inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();tryIt()}});
+let saved=null;try{saved=sessionStorage.getItem(KEY)}catch(e){}
+if(saved&&window.crypto&&crypto.subtle)derive(saved).then(h=>{if(same(h,HASH))unlock(saved);else try{sessionStorage.removeItem(KEY)}catch(e){}}).catch(()=>{});
+})();
+</script>
+</body>
+</html>

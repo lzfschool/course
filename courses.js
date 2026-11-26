@@ -47,6 +47,38 @@ window.COURSES = [
             ]
           }
         ]
+      },
+      {
+        no: 4,
+        title: "電子儀表之使用",
+        sections: [
+          {
+            title: "4-1、4-2 電感電容電阻表與元件識別量測",
+            items: [
+              { no: "工作項目 1", title: "電阻值之量測", desc: "使用 LCR 表 Ω 檔量測麵包板上的色碼電阻，練習檔位切換與引線阻抗歸零。", href: "basic-electricity-lab/ch4-item1.html" },
+              { no: "工作項目 2", title: "電感值之量測", desc: "認識電感器結構與磁心分類，使用 LCR 表 Cx/Lx 插座與 L 檔量測電感值。", href: "basic-electricity-lab/ch4-item2.html" },
+              { no: "工作項目 3", title: "電容值之量測", desc: "練習代碼標示法（104K、223M、2D）判讀，並使用 LCR 表 C 檔量測電解與陶瓷電容。", href: "basic-electricity-lab/ch4-item3.html" }
+            ]
+          },
+          {
+            title: "4-3 信號產生器之使用",
+            items: [
+              { no: "工作項目 4", title: "信號產生器之調整", desc: "操作 SFG-2120 面板切換正弦/方/三角波、鍵入頻率、設定 -20dB 衰減與振幅輸出。", href: "basic-electricity-lab/ch4-item4.html" }
+            ]
+          },
+          {
+            title: "4-4 示波器之使用",
+            items: [
+              { no: "工作項目 5", title: "示波器之調整與量測", desc: "操作 GDS-1000-U 雙通道示波器：波形計算、直流測量、含直流成分訊號、交流方波與交流電路量測。", href: "basic-electricity-lab/ch4-item5.html" }
+            ]
+          },
+          {
+            title: "4-5 量測誤差實作",
+            items: [
+              { no: "4-5 實作", title: "量測誤差、準確度、精密度與有效數字", desc: "互動計算絕對/相對誤差、滿刻度準確度、多組量測精密度、電表靈敏度與有效數字判讀。", href: "basic-electricity-lab/ch4-item6.html" }
+            ]
+          }
+        ]
       }
     ]
   }
